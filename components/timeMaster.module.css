@@ -211,7 +211,14 @@
   background: var(--surface-muted);
 }
 
-.resultDifference {
+.resultHeroLabel {
+  margin-bottom: 10px;
+  color: color-mix(in srgb, var(--foreground) 68%, transparent);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.resultElapsed {
   font-size: clamp(2.35rem, 13vw, 3.4rem);
   font-variant-numeric: tabular-nums;
   font-weight: 900;

@@ -12,13 +12,13 @@ type ResultScreenProps = {
 function getResultSentence(result: MeasurementResult): string {
   if (result.isPerfectDisplay) return "完璧です！";
   const amount = formatSecondsFromMs(result.absoluteDifferenceMs);
-  return result.differenceMs < 0 ? `${amount}秒早かったです` : `${amount}秒遅かったです`;
+  return result.differenceMs < 0 ? `${amount}早かったです` : `${amount}遅かったです`;
 }
 
 function getDifferenceLabel(result: MeasurementResult): string {
-  if (result.isPerfectDisplay) return "±0.00秒";
+  if (result.isPerfectDisplay) return "±0.0000秒";
   const prefix = result.differenceMs < 0 ? "－" : "＋";
-  return `${prefix}${formatSecondsFromMs(result.absoluteDifferenceMs)}秒`;
+  return `${prefix}${formatSecondsFromMs(result.absoluteDifferenceMs)}`;
 }
 
 export function ResultScreen({ result, isNewBest, onRetry, onChooseAgain }: ResultScreenProps) {
@@ -28,8 +28,9 @@ export function ResultScreen({ result, isNewBest, onRetry, onChooseAgain }: Resu
       {isNewBest && <p className={styles.newBest}>自己ベスト更新！</p>}
 
       <div className={styles.resultHero}>
-        <p className={result.isPerfectDisplay ? `${styles.resultDifference} ${styles.resultPerfect}` : styles.resultDifference}>
-          {getDifferenceLabel(result)}
+        <p className={styles.resultHeroLabel}>実際の時間</p>
+        <p className={result.isPerfectDisplay ? `${styles.resultElapsed} ${styles.resultPerfect}` : styles.resultElapsed}>
+          {formatSecondsFromMs(result.elapsedMs)}
         </p>
         <p className={styles.resultSummary}>{getResultSentence(result)}</p>
       </div>
@@ -37,11 +38,11 @@ export function ResultScreen({ result, isNewBest, onRetry, onChooseAgain }: Resu
       <dl className={styles.resultRows}>
         <div className={styles.resultRow}>
           <dt>目標時間</dt>
-          <dd>{formatSecondsFromMs(result.targetMs)}秒</dd>
+          <dd>{formatSecondsFromMs(result.targetMs)}</dd>
         </div>
         <div className={styles.resultRow}>
           <dt>実際の時間</dt>
-          <dd>{formatSecondsFromMs(result.elapsedMs)}秒</dd>
+          <dd>{formatSecondsFromMs(result.elapsedMs)}</dd>
         </div>
         <div className={styles.resultRow}>
           <dt>誤差</dt>

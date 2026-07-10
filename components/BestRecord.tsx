@@ -13,9 +13,9 @@ export function BestRecord({ targetMs, record }: BestRecordProps) {
       <h2 className={styles.bestRecordTitle}>{getTargetLabel(targetMs)}の自己ベスト</h2>
       {record ? (
         <p className={styles.bestRecordDetail}>
-          誤差：<strong>{formatSecondsFromMs(record.absoluteDifferenceMs)}秒</strong>
+          誤差：<strong>{formatSecondsFromMs(record.absoluteDifferenceMs)}</strong>
           <br />
-          結果：{formatSecondsFromMs(record.actualMs)}秒（正確率 {formatAccuracy(record.accuracy)}％）
+          結果：{formatSecondsFromMs(record.actualMs)}（正確率 {formatAccuracy(record.accuracy)}％）
         </p>
       ) : (
         <p className={styles.bestRecordEmpty}>まだ記録がありません</p>

@@ -4,9 +4,13 @@ import type {
   TargetMilliseconds,
 } from "../types/timeMaster";
 
+export function formatSeconds(seconds: number): string {
+  const normalized = Math.abs(seconds) < 0.00005 ? 0 : seconds;
+  return `${normalized.toFixed(4)}秒`;
+}
+
 export function formatSecondsFromMs(milliseconds: number): string {
-  const normalized = Math.abs(milliseconds) < 0.005 ? 0 : milliseconds;
-  return (normalized / 1000).toFixed(2);
+  return formatSeconds(milliseconds / 1000);
 }
 
 export function formatAccuracy(accuracy: number): string {
@@ -34,7 +38,7 @@ export function calculateMeasurementResult(
     100,
     Math.max(0, 100 - (absoluteDifferenceSeconds / targetSeconds) * 100),
   );
-  const isPerfectDisplay = formatSecondsFromMs(absoluteDifferenceMs) === "0.00";
+  const isPerfectDisplay = formatSecondsFromMs(absoluteDifferenceMs) === "0.0000秒";
 
   return {
     targetMs,

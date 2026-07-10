@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { calculateMeasurementResult, formatAccuracy, formatSecondsFromMs, getEvaluation } from "../lib/timeMaster";
+import { calculateMeasurementResult, formatAccuracy, formatSeconds, formatSecondsFromMs, getEvaluation } from "../lib/timeMaster";
 import { readBestRecords, writeBestRecords } from "../lib/storage";
 
 class MemoryStorage {
@@ -15,9 +15,11 @@ class MemoryStorage {
 }
 
 describe("時間マスターの計測・判定ロジック", () => {
-  it("表示用の秒数を0.01秒単位に丸める", () => {
-    expect(formatSecondsFromMs(29_873)).toBe("29.87");
-    expect(formatSecondsFromMs(30_126)).toBe("30.13");
+  it("表示用の秒数を小数点以下4桁に統一する", () => {
+    expect(formatSeconds(10)).toBe("10.0000秒");
+    expect(formatSeconds(2.08756)).toBe("2.0876秒");
+    expect(formatSeconds(10.12344)).toBe("10.1234秒");
+    expect(formatSecondsFromMs(7912.44)).toBe("7.9124秒");
   });
 
   it("早い・遅い誤差と正確率を算出する", () => {
@@ -30,8 +32,8 @@ describe("時間マスターの計測・判定ロジック", () => {
     expect(formatAccuracy(late.accuracy)).toBe("99.57");
   });
 
-  it("表示上0.00秒なら完全一致として扱う", () => {
-    const result = calculateMeasurementResult(10_004.9, 10_000);
+  it("表示上0.0000秒なら完全一致として扱う", () => {
+    const result = calculateMeasurementResult(10_000.049, 10_000);
     expect(result.isPerfectDisplay).toBe(true);
   });
 
