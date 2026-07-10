@@ -161,6 +161,12 @@
   text-decoration: none;
 }
 
+.secondaryButton:disabled,
+.compactButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .primaryButton {
   width: 100%;
   margin-top: auto;
@@ -385,6 +391,73 @@
   display: grid;
   gap: 10px;
   margin-top: 20px;
+}
+
+.privacyFeedback {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.debugPanel {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.debugHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.debugHeader h3 {
+  font-size: 1rem;
+}
+
+.compactButton {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--foreground);
+  background: var(--surface-muted);
+  font-weight: 800;
+}
+
+.debugList {
+  display: grid;
+  gap: 1px;
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--border);
+}
+
+.debugList div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 10px;
+  padding: 9px 10px;
+  background: var(--surface);
+  font-size: 0.75rem;
+}
+
+.debugList dt {
+  color: color-mix(in srgb, var(--foreground) 66%, transparent);
+  font-weight: 800;
+}
+
+.debugList dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .interruptedScreen {

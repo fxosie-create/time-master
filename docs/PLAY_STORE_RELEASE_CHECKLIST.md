@@ -123,6 +123,8 @@ TIME_MASTER_UPLOAD_KEY_PASSWORD=YOUR_KEY_PASSWORD
 
 ## 実機・申請直前テスト
 
+詳細なdebug実機確認は `docs/ANDROID_DEVICE_TEST_CHECKLIST.md`、Logcat手順は `docs/ANDROID_LOGCAT_GUIDE.md` を使用します。
+
 - [ ] Android Studioでdebug APKを実機またはエミュレーターへインストール
 - [ ] 10秒・30秒・1分・5分を各1回計測
 - [ ] 計測中に時間・広告・時間推測可能な動きが出ない

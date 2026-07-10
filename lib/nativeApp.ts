@@ -2,10 +2,34 @@
 
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
+export type NativeDebugInfo = {
+  debug: boolean;
+  buildType: string;
+  adMobMode: "test" | "production" | "disabled";
+  appIdConfigured: boolean;
+  bannerIdConfigured: boolean;
+  mobileAdsInitialized: boolean;
+  consentStatus: string;
+  canRequestAds: boolean;
+  privacyOptionsRequired: "true" | "false" | "unknown";
+  lastAdEvent: string;
+  lastAdErrorCode: number;
+  lastAdErrorMessage: string;
+  lastUmpError: string;
+  currentScreenAdEligible: boolean;
+};
+
+export type NativeActionResult = {
+  opened: boolean;
+  message: string;
+};
+
 type TimeMasterNativePlugin = {
   showBanner(): Promise<void>;
   hideBanner(): Promise<void>;
-  showPrivacyOptions(): Promise<void>;
+  showPrivacyOptions(): Promise<NativeActionResult>;
+  getDebugInfo(): Promise<NativeDebugInfo>;
+  resetConsentForTesting(): Promise<NativeActionResult>;
 };
 
 const TimeMasterNative = registerPlugin<TimeMasterNativePlugin>("TimeMasterNative");
@@ -35,13 +59,44 @@ export async function setNativeBannerVisible(visible: boolean): Promise<void> {
   }
 }
 
-export async function showNativePrivacyOptions(): Promise<void> {
-  if (!isAndroidNativeApp()) return;
+export async function showNativePrivacyOptions(): Promise<NativeActionResult> {
+  if (!isAndroidNativeApp()) {
+    return {
+      opened: false,
+      message: "プライバシー設定はAndroidアプリ版で利用できます。",
+    };
+  }
 
   try {
-    await TimeMasterNative.showPrivacyOptions();
+    return await TimeMasterNative.showPrivacyOptions();
   } catch {
-    // 同意フォームを開けない場合も、情報画面は利用可能にする。
+    return {
+      opened: false,
+      message: "プライバシー設定を読み込めませんでした。通信状態を確認して、もう一度お試しください。",
+    };
+  }
+}
+
+export async function getNativeDebugInfo(): Promise<NativeDebugInfo | null> {
+  if (!isAndroidNativeApp()) return null;
+
+  try {
+    const result = await TimeMasterNative.getDebugInfo();
+    return result.debug ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function resetNativeConsentForTesting(): Promise<NativeActionResult> {
+  if (!isAndroidNativeApp()) {
+    return { opened: false, message: "同意状態のリセットはAndroid debug版限定です。" };
+  }
+
+  try {
+    return await TimeMasterNative.resetConsentForTesting();
+  } catch {
+    return { opened: false, message: "同意状態をリセットできませんでした。Logcatを確認してください。" };
   }
 }
 
