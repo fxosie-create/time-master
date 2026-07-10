@@ -6,7 +6,8 @@ import type {
 
 export function formatSeconds(seconds: number): string {
   const normalized = Math.abs(seconds) < 0.00005 ? 0 : seconds;
-  return `${normalized.toFixed(4)}秒`;
+  const sign = normalized < 0 ? "−" : "";
+  return `${sign}${Math.abs(normalized).toFixed(4)}秒`;
 }
 
 export function formatSecondsFromMs(milliseconds: number): string {

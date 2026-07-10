@@ -17,7 +17,7 @@ function getResultSentence(result: MeasurementResult): string {
 
 function getDifferenceLabel(result: MeasurementResult): string {
   if (result.isPerfectDisplay) return "±0.0000秒";
-  const prefix = result.differenceMs < 0 ? "－" : "＋";
+  const prefix = result.differenceMs < 0 ? "−" : "＋";
   return `${prefix}${formatSecondsFromMs(result.absoluteDifferenceMs)}`;
 }
 

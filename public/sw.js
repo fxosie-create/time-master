@@ -1,4 +1,4 @@
-const CACHE_NAME = "time-master-v1";
+const CACHE_NAME = "time-master-v2";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/time-master-icon.svg"];
 
 self.addEventListener("install", (event) => {

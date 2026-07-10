@@ -19,6 +19,7 @@ describe("時間マスターの計測・判定ロジック", () => {
     expect(formatSeconds(10)).toBe("10.0000秒");
     expect(formatSeconds(2.08756)).toBe("2.0876秒");
     expect(formatSeconds(10.12344)).toBe("10.1234秒");
+    expect(formatSeconds(-7.91244)).toBe("−7.9124秒");
     expect(formatSecondsFromMs(7912.44)).toBe("7.9124秒");
   });
 
