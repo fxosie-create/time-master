@@ -5,10 +5,13 @@
 - [ ] アプリがクラッシュせず起動する
 - [ ] アプリ情報に「広告・同意デバッグ情報」が表示される
 - [ ] Build typeが`debug`
+- [ ] Android buildが`1.0.1 (2)`
 - [ ] AdMob modeが`test`
 - [ ] AdMob App ID設定済みが`true`
 - [ ] Banner ID設定済みが`true`
 - [ ] MobileAds initializedが`true`
+- [ ] Native bridge statusが`connected`
+- [ ] 「テスト広告を再読み込み」でWeb画面状態と無関係に公式テストバナーを要求できる
 - [ ] 開始前画面でGoogleのテストバナーが画面下部に表示される
 - [ ] 開始ボタンと広告の間に十分な余白がある
 - [ ] 計測開始直後に広告が完全に消える

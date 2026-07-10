@@ -42,17 +42,18 @@ export function TimeMasterApp() {
   }, []);
 
   const nativeBannerVisible = isAndroidNativeApp() && !isInfoOpen && (screen === "ready" || screen === "result");
+  const nativeScreen = isInfoOpen ? "app_info" : screen;
 
   useEffect(() => subscribeToNativeBannerVisibility(({ height, visible }) => {
     setNativeBannerHeight(visible ? Math.max(0, height) : 0);
   }), []);
 
   useEffect(() => {
-    void setNativeBannerVisible(nativeBannerVisible);
+    void setNativeBannerVisible(nativeBannerVisible, nativeScreen);
     return () => {
-      void setNativeBannerVisible(false);
+      void setNativeBannerVisible(false, nativeScreen);
     };
-  }, [nativeBannerVisible]);
+  }, [nativeBannerVisible, nativeScreen]);
 
   const appStyle = nativeBannerHeight > 0
     ? ({ "--native-banner-height": `${nativeBannerHeight}px` } as CSSProperties)

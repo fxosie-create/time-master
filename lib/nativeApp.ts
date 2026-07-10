@@ -5,18 +5,34 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 export type NativeDebugInfo = {
   debug: boolean;
   buildType: string;
+  appVersion: string;
   adMobMode: "test" | "production" | "disabled";
   appIdConfigured: boolean;
   bannerIdConfigured: boolean;
+  adMobAppId: string;
+  manifestAdMobAppId: string;
+  bannerAdUnitId: string;
   mobileAdsInitialized: boolean;
   consentStatus: string;
   canRequestAds: boolean;
   privacyOptionsRequired: "true" | "false" | "unknown";
+  lastAdLoadRequestScreen: string;
   lastAdEvent: string;
   lastAdErrorCode: number;
+  lastAdErrorDomain: string;
   lastAdErrorMessage: string;
-  lastUmpError: string;
-  currentScreenAdEligible: boolean;
+  lastUmpEvent: string;
+  lastUmpErrorCode: number;
+  lastUmpErrorMessage: string;
+  nativeBridgeStatus: string;
+  currentScreen: string;
+  shouldShowAd: boolean;
+  adContainerWidth: number;
+  adContainerHeight: number;
+  adContainerVisibility: string;
+  adViewAttached: boolean;
+  adViewUnitId: string;
+  testDeviceHash: string;
 };
 
 export type NativeActionResult = {
@@ -25,10 +41,15 @@ export type NativeActionResult = {
 };
 
 type TimeMasterNativePlugin = {
-  showBanner(): Promise<void>;
-  hideBanner(): Promise<void>;
+  showBanner(options: { screen: string }): Promise<void>;
+  hideBanner(options: { screen: string }): Promise<void>;
   showPrivacyOptions(): Promise<NativeActionResult>;
   getDebugInfo(): Promise<NativeDebugInfo>;
+  reloadTestBanner(): Promise<NativeActionResult>;
+  showAdForDiagnostics(): Promise<NativeActionResult>;
+  hideAdForDiagnostics(): Promise<NativeActionResult>;
+  runAdSdkDiagnostics(): Promise<NativeActionResult>;
+  refreshUmpState(): Promise<NativeActionResult>;
   resetConsentForTesting(): Promise<NativeActionResult>;
 };
 
@@ -45,14 +66,14 @@ export function isAndroidNativeApp(): boolean {
   return Capacitor.getPlatform() === "android";
 }
 
-export async function setNativeBannerVisible(visible: boolean): Promise<void> {
+export async function setNativeBannerVisible(visible: boolean, screen = "unknown"): Promise<void> {
   if (!isAndroidNativeApp()) return;
 
   try {
     if (visible) {
-      await TimeMasterNative.showBanner();
+      await TimeMasterNative.showBanner({ screen });
     } else {
-      await TimeMasterNative.hideBanner();
+      await TimeMasterNative.hideBanner({ screen });
     }
   } catch {
     // ネイティブ広告の失敗でゲーム本体を停止させない。
@@ -72,7 +93,7 @@ export async function showNativePrivacyOptions(): Promise<NativeActionResult> {
   } catch {
     return {
       opened: false,
-      message: "プライバシー設定を読み込めませんでした。通信状態を確認して、もう一度お試しください。",
+      message: "Androidネイティブブリッジへ接続できませんでした。Time Master 1.0.1 debug APKを再インストールしてください。",
     };
   }
 }
@@ -81,10 +102,31 @@ export async function getNativeDebugInfo(): Promise<NativeDebugInfo | null> {
   if (!isAndroidNativeApp()) return null;
 
   try {
-    const result = await TimeMasterNative.getDebugInfo();
-    return result.debug ? result : null;
+    return await TimeMasterNative.getDebugInfo();
   } catch {
     return null;
+  }
+}
+
+type NativeDiagnosticMethod =
+  | "reloadTestBanner"
+  | "showAdForDiagnostics"
+  | "hideAdForDiagnostics"
+  | "runAdSdkDiagnostics"
+  | "refreshUmpState";
+
+export async function runNativeDiagnostic(method: NativeDiagnosticMethod): Promise<NativeActionResult> {
+  if (!isAndroidNativeApp()) {
+    return { opened: false, message: "広告診断はAndroid debug版限定です。" };
+  }
+
+  try {
+    return await TimeMasterNative[method]();
+  } catch {
+    return {
+      opened: false,
+      message: "Androidネイティブブリッジへ接続できませんでした。最新debug APKを再インストールしてください。",
+    };
   }
 }
 

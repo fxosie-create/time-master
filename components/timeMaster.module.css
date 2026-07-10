@@ -460,6 +460,11 @@
   text-align: right;
 }
 
+.debugActions {
+  display: grid;
+  gap: 10px;
+}
+
 .interruptedScreen {
   justify-content: center;
   text-align: center;

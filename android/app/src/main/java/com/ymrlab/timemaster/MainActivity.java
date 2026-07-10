@@ -1,6 +1,9 @@
 package com.ymrlab.timemaster;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -25,11 +28,16 @@ import com.google.android.ump.ConsentRequestParameters;
 import com.google.android.ump.FormError;
 import com.google.android.ump.UserMessagingPlatform;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Locale;
+
 /** Hosts the offline Capacitor application and the native-only test/production banner. */
 public class MainActivity extends BridgeActivity {
     public static final String TAG_ADS = "TimeMasterAds";
     public static final String TAG_UMP = "TimeMasterUMP";
     public static final String TAG_APP = "TimeMasterApp";
+    public static final String TAG_BRIDGE = "TimeMasterBridge";
     private static final String BANNER_VISIBILITY_EVENT = "time-master-native-banner-visibility";
 
     private FrameLayout adContainer;
@@ -40,24 +48,37 @@ public class MainActivity extends BridgeActivity {
     private boolean bannerRequested;
     private boolean consentUpdateInProgress;
     private int bottomSystemInsetPx;
+    private String manifestAdMobAppId = "";
+    private String testDeviceHash = "";
+    private String currentScreen = "startup";
+    private String lastAdLoadRequestScreen = "not_requested";
     private String lastAdEvent = "not_started";
     private int lastAdErrorCode = -1;
+    private String lastAdErrorDomain = "";
     private String lastAdErrorMessage = "";
-    private String lastUmpError = "";
+    private String lastUmpEvent = "not_started";
+    private int lastUmpErrorCode = -1;
+    private String lastUmpErrorMessage = "";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.i(TAG_APP, "アプリ起動 build=" + (BuildConfig.DEBUG ? "debug" : "release"));
+        // Capacitor builds the bridge inside super.onCreate(). Custom plugins must be registered first.
         registerPlugin(TimeMasterNativePlugin.class);
+        super.onCreate(savedInstanceState);
+
+        Log.i(TAG_APP, "アプリ起動 build=" + (BuildConfig.DEBUG ? "debug" : "release")
+            + " version=" + BuildConfig.VERSION_NAME + "(" + BuildConfig.VERSION_CODE + ")");
+        Log.i(TAG_BRIDGE, "TimeMasterNative登録完了 bridge=" + (getBridge() != null ? "connected" : "missing"));
+        logStartupConfiguration();
         createAdContainer();
         requestConsentAndInitializeAds();
     }
 
-    /** Requests fresh consent information at every app startup. */
+    /** Requests fresh consent information at every app startup and on debug refresh. */
     public void requestConsentAndInitializeAds() {
         if (!BuildConfig.ADS_ENABLED) {
             lastAdEvent = "disabled";
+            lastUmpEvent = "disabled";
             Log.i(TAG_ADS, "広告無効: release用AdMob IDが未設定です");
             return;
         }
@@ -67,42 +88,51 @@ public class MainActivity extends BridgeActivity {
         }
 
         consentUpdateInProgress = true;
-        lastUmpError = "";
+        lastUmpEvent = "request_started";
+        clearUmpError();
         consentInformation = UserMessagingPlatform.getConsentInformation(this);
         ConsentRequestParameters.Builder parameters = new ConsentRequestParameters.Builder();
         if (BuildConfig.DEBUG) {
+            testDeviceHash = BuildConfig.UMP_TEST_DEVICE_HASHED_ID.isEmpty()
+                ? calculateTestDeviceHash()
+                : BuildConfig.UMP_TEST_DEVICE_HASHED_ID;
             ConsentDebugSettings.Builder debugSettingsBuilder = new ConsentDebugSettings.Builder(this)
                 .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA);
-            if (!BuildConfig.UMP_TEST_DEVICE_HASHED_ID.isEmpty()) {
-                debugSettingsBuilder.addTestDeviceHashedId(BuildConfig.UMP_TEST_DEVICE_HASHED_ID);
-                Log.i(TAG_UMP, "UMPテスト端末ハッシュを設定しました");
+            if (!testDeviceHash.isEmpty()) {
+                debugSettingsBuilder.addTestDeviceHashedId(testDeviceHash);
+                Log.i(TAG_UMP, "UMPテストデバイスハッシュ=" + testDeviceHash + " EEA強制=true");
             } else {
-                Log.i(TAG_UMP, "UMP debug: EEA地域を強制。実機ではLogcatの端末ハッシュをGradle設定へ追加できます");
+                Log.w(TAG_UMP, "UMPテストデバイスハッシュを算出できませんでした。SDKのLogcat出力を確認してください");
             }
             parameters.setConsentDebugSettings(debugSettingsBuilder.build());
         }
 
-        Log.i(TAG_UMP, "UMP同意情報更新開始");
+        Log.i(TAG_UMP, "requestConsentInfoUpdate開始");
         consentInformation.requestConsentInfoUpdate(
             this,
             parameters.build(),
             () -> {
                 consentUpdateInProgress = false;
-                logConsentState("UMP同意情報更新成功");
+                lastUmpEvent = "request_succeeded";
+                logConsentState("requestConsentInfoUpdate成功");
+                lastUmpEvent = "consent_form_check_started";
+                Log.i(TAG_UMP, "loadAndShowConsentFormIfRequired開始");
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(
                     this,
                     formError -> {
                         if (formError != null) {
-                            recordUmpError("UMP同意フォーム表示失敗", formError);
+                            recordUmpError("loadAndShowConsentFormIfRequired失敗", formError);
                         } else {
-                            Log.i(TAG_UMP, "UMP同意フォーム処理完了");
+                            lastUmpEvent = "consent_form_completed";
+                            Log.i(TAG_UMP, "loadAndShowConsentFormIfRequired完了");
                         }
                         boolean canRequestAds = consentInformation.canRequestAds();
-                        Log.i(TAG_UMP, "canRequestAds=" + canRequestAds);
+                        Log.i(TAG_UMP, "canRequestAds=" + canRequestAds
+                            + " privacyOptionsRequirementStatus=" + getPrivacyOptionsStatus());
                         if (canRequestAds) {
                             initializeMobileAds();
                         } else if (BuildConfig.DEBUG) {
-                            Log.w(TAG_UMP, "debug公式テスト広告のためUMP未完了時フォールバックを使用します");
+                            Log.w(TAG_UMP, "debug公式テスト広告のためUMP gateを迂回してSDKを初期化します");
                             initializeMobileAds();
                         } else {
                             hideBanner();
@@ -112,9 +142,9 @@ public class MainActivity extends BridgeActivity {
             },
             formError -> {
                 consentUpdateInProgress = false;
-                recordUmpError("UMP同意情報更新失敗", formError);
+                recordUmpError("requestConsentInfoUpdate失敗", formError);
                 if (BuildConfig.DEBUG) {
-                    Log.w(TAG_UMP, "debug公式テスト広告のためUMP更新失敗時フォールバックを使用します");
+                    Log.w(TAG_UMP, "debug公式テスト広告のためUMP更新失敗後もSDKを初期化します");
                     initializeMobileAds();
                 } else {
                     hideBanner();
@@ -134,26 +164,38 @@ public class MainActivity extends BridgeActivity {
         adsInitializationStarted = true;
         lastAdEvent = "mobile_ads_initializing";
         Log.i(TAG_ADS, "MobileAds初期化開始 mode=" + getAdMobMode());
-        MobileAds.initialize(this, initializationStatus -> runOnUiThread(() -> {
-            adsInitialized = true;
-            lastAdEvent = "mobile_ads_initialized";
-            Log.i(TAG_ADS, "MobileAds初期化完了");
-            loadBannerIfRequested();
-        }));
+        try {
+            MobileAds.initialize(this, initializationStatus -> runOnUiThread(() -> {
+                adsInitialized = true;
+                lastAdEvent = "mobile_ads_initialized";
+                Log.i(TAG_ADS, "MobileAds初期化完了 adapters="
+                    + initializationStatus.getAdapterStatusMap().keySet());
+                loadBannerIfRequested();
+            }));
+        } catch (RuntimeException error) {
+            adsInitializationStarted = false;
+            lastAdEvent = "mobile_ads_initialization_failed";
+            lastAdErrorMessage = error.getClass().getSimpleName() + ": " + safe(error.getMessage());
+            Log.e(TAG_ADS, "MobileAds初期化失敗 " + lastAdErrorMessage, error);
+        }
     }
 
     private void createAdContainer() {
         adContainer = new FrameLayout(this);
         adContainer.setVisibility(View.GONE);
         adContainer.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        adContainer.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if ((right - left) != (oldRight - oldLeft) || (bottom - top) != (oldBottom - oldTop)) {
+                logAdContainerState("広告コンテナlayout変更");
+            }
+        });
         ViewCompat.setOnApplyWindowInsetsListener(adContainer, (view, windowInsets) -> {
-            bottomSystemInsetPx = windowInsets
-                .getInsets(WindowInsetsCompat.Type.systemBars())
-                .bottom;
+            bottomSystemInsetPx = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
             view.setPadding(0, 0, 0, bottomSystemInsetPx);
             if (view.getVisibility() == View.VISIBLE) {
                 notifyBannerVisibility(true, getReservedBannerHeightDp());
             }
+            Log.i(TAG_ADS, "system bar bottom inset=" + bottomSystemInsetPx + "px");
             return windowInsets;
         });
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
@@ -163,18 +205,19 @@ public class MainActivity extends BridgeActivity {
         );
         addContentView(adContainer, layoutParams);
         ViewCompat.requestApplyInsets(adContainer);
-        Log.i(TAG_ADS, "バナーコンテナを画面下部へ追加しました");
+        Log.i(TAG_ADS, "バナーコンテナをdecorViewへaddContentViewしました parent=FrameLayout gravity=BOTTOM");
     }
 
-    public void setBannerRequested(boolean shouldShow) {
+    public void setBannerRequested(boolean shouldShow, String screen) {
+        currentScreen = screen == null || screen.isEmpty() ? "unknown" : screen;
         bannerRequested = shouldShow;
-        Log.i(TAG_APP, "画面遷移時の広告表示対象=" + shouldShow);
+        Log.i(TAG_BRIDGE, "画面状態通知 currentScreen=" + currentScreen + " shouldShowAd=" + shouldShow);
         if (!shouldShow) {
             hideBanner();
             return;
         }
         lastAdEvent = "show_requested";
-        Log.i(TAG_ADS, "バナー表示命令を受信しました");
+        Log.i(TAG_ADS, "バナー表示命令 currentScreen=" + currentScreen);
         loadBannerIfRequested();
     }
 
@@ -182,7 +225,7 @@ public class MainActivity extends BridgeActivity {
         if (!bannerRequested || adContainer == null || adView != null) return;
         if (!adsInitialized) {
             lastAdEvent = "waiting_for_mobile_ads";
-            Log.i(TAG_ADS, "バナー表示待機: MobileAds初期化前です");
+            Log.i(TAG_ADS, "バナー表示待機: MobileAds初期化前 currentScreen=" + currentScreen);
             return;
         }
         if (BuildConfig.ADMOB_BANNER_AD_UNIT_ID.isEmpty()) {
@@ -192,20 +235,25 @@ public class MainActivity extends BridgeActivity {
             return;
         }
 
+        lastAdLoadRequestScreen = currentScreen;
+        clearAdError();
         AdView nextAdView = new AdView(this);
         nextAdView.setAdUnitId(BuildConfig.ADMOB_BANNER_AD_UNIT_ID);
         nextAdView.setAdSize(getAdaptiveAdSize());
+        Log.i(TAG_ADS, "AdView作成 unitId=" + nextAdView.getAdUnitId() + " size=" + nextAdView.getAdSize());
         nextAdView.setAdListener(new AdListener() {
             @Override
             public void onAdLoaded() {
                 if (nextAdView != adView || !bannerRequested) return;
                 lastAdEvent = "loaded";
-                lastAdErrorCode = -1;
-                lastAdErrorMessage = "";
+                clearAdError();
                 adContainer.setVisibility(View.VISIBLE);
                 adContainer.bringToFront();
-                adContainer.post(() -> notifyBannerVisibility(true, getReservedBannerHeightDp()));
-                Log.i(TAG_ADS, "バナー広告ロード成功");
+                adContainer.post(() -> {
+                    logAdContainerState("バナー広告ロード成功・表示");
+                    notifyBannerVisibility(true, getReservedBannerHeightDp());
+                });
+                Log.i(TAG_ADS, "バナー広告ロード成功 currentScreen=" + currentScreen);
             }
 
             @Override
@@ -213,13 +261,17 @@ public class MainActivity extends BridgeActivity {
                 if (nextAdView != adView) return;
                 lastAdEvent = "load_failed";
                 lastAdErrorCode = adError.getCode();
+                lastAdErrorDomain = adError.getDomain();
                 lastAdErrorMessage = adError.getMessage();
-                Log.e(
-                    TAG_ADS,
-                    "バナー広告ロード失敗 code=" + lastAdErrorCode
-                        + " message=" + lastAdErrorMessage
-                );
+                Log.e(TAG_ADS, "バナー広告ロード失敗 code=" + lastAdErrorCode
+                    + " domain=" + lastAdErrorDomain + " message=" + lastAdErrorMessage);
                 hideBannerInternal(false);
+            }
+
+            @Override
+            public void onAdImpression() {
+                lastAdEvent = "impression";
+                Log.i(TAG_ADS, "バナー広告impression");
             }
         });
 
@@ -232,7 +284,9 @@ public class MainActivity extends BridgeActivity {
         ));
         adContainer.bringToFront();
         lastAdEvent = "load_started";
-        Log.i(TAG_ADS, "バナー広告ロード開始 size=" + nextAdView.getAdSize());
+        Log.i(TAG_ADS, "AdViewをコンテナへaddView childCount=" + adContainer.getChildCount());
+        Log.i(TAG_ADS, "AdView.loadAd開始 screen=" + lastAdLoadRequestScreen
+            + " unitId=" + nextAdView.getAdUnitId());
         nextAdView.loadAd(new AdRequest.Builder().build());
     }
 
@@ -262,13 +316,88 @@ public class MainActivity extends BridgeActivity {
         adContainer.setVisibility(View.GONE);
         if (recordEvent) lastAdEvent = "hidden";
         notifyBannerVisibility(false, 0);
-        Log.i(TAG_ADS, "広告非表示処理");
+        logAdContainerState("広告非表示");
     }
 
-    public void showPrivacyOptions(PrivacyOptionsCallback callback) {
-        Log.i(TAG_APP, "プライバシー設定ボタン押下");
+    public void reloadTestBanner(ActionCallback callback) {
+        if (!BuildConfig.DEBUG) {
+            callback.onResult(false, "テスト広告の再読み込みはdebugビルド限定です。");
+            return;
+        }
+        Log.i(TAG_ADS, "ネイティブ単体テスト広告ロード要求 UMP gate bypass=true");
+        currentScreen = "debug_diagnostic_reload";
+        bannerRequested = true;
+        hideBannerInternal(false);
+        lastAdEvent = "diagnostic_reload_requested";
+        initializeMobileAds();
+        loadBannerIfRequested();
+        callback.onResult(true, "Google公式テストバナーのネイティブ単体ロードを開始しました。");
+    }
+
+    public void showBannerForDiagnostics(ActionCallback callback) {
+        if (!BuildConfig.DEBUG) {
+            callback.onResult(false, "広告診断はdebugビルド限定です。");
+            return;
+        }
+        setBannerRequested(true, "debug_diagnostic_show");
+        callback.onResult(true, "広告表示を要求しました。状態欄を更新して確認してください。");
+    }
+
+    public void hideBannerForDiagnostics(ActionCallback callback) {
+        if (!BuildConfig.DEBUG) {
+            callback.onResult(false, "広告診断はdebugビルド限定です。");
+            return;
+        }
+        setBannerRequested(false, "debug_diagnostic_hide");
+        callback.onResult(true, "広告を非表示にしました。");
+    }
+
+    public void runAdSdkDiagnostics(ActionCallback callback) {
+        if (!BuildConfig.DEBUG) {
+            callback.onResult(false, "広告SDK診断はdebugビルド限定です。");
+            return;
+        }
+        Log.i(TAG_ADS, "広告SDK診断開始");
+        logAdContainerState("広告SDK診断");
+        if (!adsInitialized) {
+            initializeMobileAds();
+            callback.onResult(false, "MobileAdsを初期化しています。完了後にもう一度押してください。");
+            return;
+        }
+        MobileAds.openAdInspector(this, inspectorError -> runOnUiThread(() -> {
+            if (inspectorError == null) {
+                lastAdEvent = "ad_inspector_closed";
+                Log.i(TAG_ADS, "広告インスペクタを正常に閉じました");
+                callback.onResult(true, "広告インスペクタを閉じました。");
+            } else {
+                lastAdEvent = "ad_inspector_failed";
+                lastAdErrorCode = inspectorError.getCode();
+                lastAdErrorDomain = inspectorError.getDomain();
+                lastAdErrorMessage = inspectorError.getMessage();
+                Log.e(TAG_ADS, "広告インスペクタ失敗 code=" + lastAdErrorCode
+                    + " domain=" + lastAdErrorDomain + " message=" + lastAdErrorMessage);
+                callback.onResult(false, "広告SDK診断エラー（" + lastAdErrorCode + "）: " + lastAdErrorMessage);
+            }
+        }));
+    }
+
+    public void refreshConsentForTesting(ActionCallback callback) {
+        if (!BuildConfig.DEBUG) {
+            callback.onResult(false, "UMP再取得はdebugビルド限定です。");
+            return;
+        }
+        if (consentUpdateInProgress) {
+            callback.onResult(false, "UMP状態は現在更新中です。");
+            return;
+        }
+        requestConsentAndInitializeAds();
+        callback.onResult(true, "UMP状態の再取得を開始しました。");
+    }
+
+    public void showPrivacyOptions(ActionCallback callback) {
+        Log.i(TAG_BRIDGE, "プライバシー設定ボタン押下をネイティブで受信");
         if (!BuildConfig.ADS_ENABLED || consentInformation == null) {
-            String message = "現在は広告・同意機能が無効なため、プライバシー設定を表示できません。";
+            String message = "広告・同意機能が未初期化のため、プライバシー設定を表示できません。";
             Log.w(TAG_UMP, message);
             callback.onResult(false, message);
             return;
@@ -279,36 +408,33 @@ public class MainActivity extends BridgeActivity {
         Log.i(TAG_UMP, "privacyOptionsRequirementStatus=" + getPrivacyOptionsStatus());
         if (requirementStatus != ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED) {
             String message;
-            if (!lastUmpError.isEmpty()) {
-                message = BuildConfig.DEBUG
-                    ? "現在はテスト環境のため、AdMobのプライバシーメッセージを利用できません。デバッグ情報とLogcatを確認してください。"
-                    : "プライバシー設定を読み込めませんでした。通信状態を確認して、もう一度お試しください。";
+            if (lastUmpErrorCode >= 0) {
+                message = formatUmpErrorForUser();
             } else if (requirementStatus == ConsentInformation.PrivacyOptionsRequirementStatus.NOT_REQUIRED) {
                 message = "現在、この地域では追加のプライバシー設定は必要ありません。";
             } else {
-                message = "プライバシー設定の状態を確認中です。しばらくしてから、もう一度お試しください。";
+                message = "プライバシー設定の状態を確認中です。しばらくしてからもう一度お試しください。";
             }
             Log.i(TAG_UMP, "プライバシー設定フォーム非表示: " + message);
             callback.onResult(false, message);
             return;
         }
 
-        Log.i(TAG_UMP, "プライバシー設定フォーム表示開始");
+        lastUmpEvent = "privacy_options_form_started";
+        Log.i(TAG_UMP, "showPrivacyOptionsForm開始");
         UserMessagingPlatform.showPrivacyOptionsForm(this, formError -> {
             if (formError != null) {
-                recordUmpError("プライバシー設定フォーム表示失敗", formError);
-                callback.onResult(
-                    false,
-                    "プライバシー設定を読み込めませんでした。通信状態を確認して、もう一度お試しください。"
-                );
+                recordUmpError("showPrivacyOptionsForm失敗", formError);
+                callback.onResult(false, formatUmpErrorForUser());
                 return;
             }
-            Log.i(TAG_UMP, "プライバシー設定フォーム表示成功");
+            lastUmpEvent = "privacy_options_form_succeeded";
+            Log.i(TAG_UMP, "showPrivacyOptionsForm成功");
             callback.onResult(true, "プライバシー設定を表示しました。");
         });
     }
 
-    public void resetConsentForTesting(PrivacyOptionsCallback callback) {
+    public void resetConsentForTesting(ActionCallback callback) {
         if (!BuildConfig.DEBUG) {
             callback.onResult(false, "同意状態のリセットはdebugビルド限定です。");
             return;
@@ -318,7 +444,8 @@ public class MainActivity extends BridgeActivity {
         }
         Log.i(TAG_UMP, "debug同意状態リセット");
         consentInformation.reset();
-        lastUmpError = "";
+        clearUmpError();
+        consentUpdateInProgress = false;
         requestConsentAndInitializeAds();
         callback.onResult(true, "同意状態をリセットし、UMP情報を再取得しています。");
     }
@@ -327,19 +454,71 @@ public class MainActivity extends BridgeActivity {
         JSObject result = new JSObject();
         result.put("debug", BuildConfig.DEBUG);
         result.put("buildType", BuildConfig.DEBUG ? "debug" : "release");
+        result.put("appVersion", BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")");
         result.put("adMobMode", getAdMobMode());
-        result.put("appIdConfigured", !BuildConfig.ADMOB_APP_ID.isEmpty());
+        result.put("appIdConfigured", !BuildConfig.ADMOB_APP_ID.isEmpty() && !manifestAdMobAppId.isEmpty());
         result.put("bannerIdConfigured", !BuildConfig.ADMOB_BANNER_AD_UNIT_ID.isEmpty());
+        result.put("adMobAppId", BuildConfig.ADMOB_APP_ID);
+        result.put("manifestAdMobAppId", manifestAdMobAppId);
+        result.put("bannerAdUnitId", BuildConfig.ADMOB_BANNER_AD_UNIT_ID);
         result.put("mobileAdsInitialized", adsInitialized);
         result.put("consentStatus", getConsentStatus());
         result.put("canRequestAds", consentInformation != null && consentInformation.canRequestAds());
         result.put("privacyOptionsRequired", getPrivacyOptionsStatus());
+        result.put("lastAdLoadRequestScreen", lastAdLoadRequestScreen);
         result.put("lastAdEvent", lastAdEvent);
         result.put("lastAdErrorCode", lastAdErrorCode);
+        result.put("lastAdErrorDomain", lastAdErrorDomain);
         result.put("lastAdErrorMessage", lastAdErrorMessage);
-        result.put("lastUmpError", lastUmpError);
-        result.put("currentScreenAdEligible", bannerRequested);
+        result.put("lastUmpEvent", lastUmpEvent);
+        result.put("lastUmpErrorCode", lastUmpErrorCode);
+        result.put("lastUmpErrorMessage", lastUmpErrorMessage);
+        result.put("nativeBridgeStatus", getBridge() != null ? "connected" : "missing");
+        result.put("currentScreen", currentScreen);
+        result.put("shouldShowAd", bannerRequested);
+        result.put("adContainerWidth", adContainer == null ? -1 : adContainer.getWidth());
+        result.put("adContainerHeight", adContainer == null ? -1 : adContainer.getHeight());
+        result.put("adContainerVisibility", getAdContainerVisibility());
+        result.put("adViewAttached", adView != null && adView.getParent() == adContainer);
+        result.put("adViewUnitId", adView == null ? "" : safe(adView.getAdUnitId()));
+        result.put("testDeviceHash", testDeviceHash);
+        Log.i(TAG_BRIDGE, "getDebugInfo応答 currentScreen=" + currentScreen
+            + " shouldShowAd=" + bannerRequested + " lastAdEvent=" + lastAdEvent);
         return result;
+    }
+
+    private void logStartupConfiguration() {
+        try {
+            ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo(
+                getPackageName(), PackageManager.GET_META_DATA);
+            if (applicationInfo.metaData != null) {
+                manifestAdMobAppId = safe(applicationInfo.metaData.getString(
+                    "com.google.android.gms.ads.APPLICATION_ID"));
+            }
+        } catch (PackageManager.NameNotFoundException error) {
+            Log.e(TAG_APP, "AndroidManifestのAdMob App ID確認失敗", error);
+        }
+        Log.i(TAG_APP, "AndroidManifest AdMob App ID="
+            + (manifestAdMobAppId.isEmpty() ? "未設定" : manifestAdMobAppId));
+        Log.i(TAG_ADS, "広告設定 mode=" + getAdMobMode()
+            + " BuildConfigAppId=" + BuildConfig.ADMOB_APP_ID
+            + " BannerUnitId=" + BuildConfig.ADMOB_BANNER_AD_UNIT_ID
+            + " SDK=play-services-ads:25.4.0 UMP=4.0.0");
+    }
+
+    private String calculateTestDeviceHash() {
+        String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (androidId == null || androidId.isEmpty()) return "";
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] bytes = digest.digest(androidId.getBytes(StandardCharsets.UTF_8));
+            StringBuilder value = new StringBuilder();
+            for (byte item : bytes) value.append(String.format(Locale.US, "%02X", item & 0xff));
+            return value.toString();
+        } catch (Exception error) {
+            Log.e(TAG_UMP, "UMPテストデバイスハッシュ算出失敗", error);
+            return "";
+        }
     }
 
     private String getAdMobMode() {
@@ -366,18 +545,52 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void logConsentState(String prefix) {
-        Log.i(
-            TAG_UMP,
-            prefix
-                + " consentStatus=" + getConsentStatus()
-                + " canRequestAds=" + consentInformation.canRequestAds()
-                + " privacyOptionsRequirementStatus=" + getPrivacyOptionsStatus()
-        );
+        Log.i(TAG_UMP, prefix + " consentStatus=" + getConsentStatus()
+            + " canRequestAds=" + consentInformation.canRequestAds()
+            + " privacyOptionsRequirementStatus=" + getPrivacyOptionsStatus());
     }
 
     private void recordUmpError(String prefix, FormError formError) {
-        lastUmpError = "code=" + formError.getErrorCode() + " message=" + formError.getMessage();
-        Log.e(TAG_UMP, prefix + " " + lastUmpError);
+        lastUmpEvent = "error";
+        lastUmpErrorCode = formError.getErrorCode();
+        lastUmpErrorMessage = formError.getMessage();
+        Log.e(TAG_UMP, prefix + " code=" + lastUmpErrorCode + " message=" + lastUmpErrorMessage);
+    }
+
+    private String formatUmpErrorForUser() {
+        return "UMPエラー（コード " + lastUmpErrorCode + "）: " + lastUmpErrorMessage
+            + "。通信状態、AdMobアプリID、プライバシーメッセージ設定を確認してください。";
+    }
+
+    private void clearUmpError() {
+        lastUmpErrorCode = -1;
+        lastUmpErrorMessage = "";
+    }
+
+    private void clearAdError() {
+        lastAdErrorCode = -1;
+        lastAdErrorDomain = "";
+        lastAdErrorMessage = "";
+    }
+
+    private String getAdContainerVisibility() {
+        if (adContainer == null) return "missing";
+        if (adContainer.getVisibility() == View.VISIBLE) return "VISIBLE";
+        if (adContainer.getVisibility() == View.INVISIBLE) return "INVISIBLE";
+        return "GONE";
+    }
+
+    private void logAdContainerState(String prefix) {
+        Log.i(TAG_ADS, prefix + " width=" + (adContainer == null ? -1 : adContainer.getWidth())
+            + " height=" + (adContainer == null ? -1 : adContainer.getHeight())
+            + " visibility=" + getAdContainerVisibility()
+            + " childCount=" + (adContainer == null ? -1 : adContainer.getChildCount())
+            + " adViewAttached=" + (adView != null && adView.getParent() == adContainer)
+            + " unitId=" + (adView == null ? "none" : safe(adView.getAdUnitId())));
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 
     private void notifyBannerVisibility(boolean visible, int heightDp) {
@@ -395,7 +608,7 @@ public class MainActivity extends BridgeActivity {
         super.onDestroy();
     }
 
-    public interface PrivacyOptionsCallback {
-        void onResult(boolean opened, String message);
+    public interface ActionCallback {
+        void onResult(boolean succeeded, String message);
     }
 }

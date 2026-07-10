@@ -14,45 +14,69 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class TimeMasterNativePlugin extends Plugin {
     @PluginMethod
     public void showBanner(PluginCall call) {
-        Log.i(MainActivity.TAG_APP, "WebViewからshowBannerを受信");
-        runOnMainActivity(activity -> activity.setBannerRequested(true), call);
+        String screen = call.getString("screen", "unknown");
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからshowBannerを受信 screen=" + screen);
+        runOnMainActivity(activity -> activity.setBannerRequested(true, screen), call);
     }
 
     @PluginMethod
     public void hideBanner(PluginCall call) {
-        Log.i(MainActivity.TAG_APP, "WebViewからhideBannerを受信");
-        runOnMainActivity(activity -> activity.setBannerRequested(false), call);
+        String screen = call.getString("screen", "unknown");
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからhideBannerを受信 screen=" + screen);
+        runOnMainActivity(activity -> activity.setBannerRequested(false, screen), call);
     }
 
     @PluginMethod
     public void showPrivacyOptions(PluginCall call) {
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからshowPrivacyOptionsを受信");
         MainActivity activity = getMainActivity(call);
         if (activity == null) return;
-        activity.runOnUiThread(() -> activity.showPrivacyOptions((opened, message) -> {
-            JSObject result = new JSObject();
-            result.put("opened", opened);
-            result.put("message", message);
-            call.resolve(result);
-        }));
+        activity.runOnUiThread(() -> activity.showPrivacyOptions((succeeded, message) ->
+            resolveAction(call, succeeded, message)));
     }
 
     @PluginMethod
     public void getDebugInfo(PluginCall call) {
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからgetDebugInfoを受信");
         MainActivity activity = getMainActivity(call);
         if (activity == null) return;
         activity.runOnUiThread(() -> call.resolve(activity.getDebugInfo()));
     }
 
     @PluginMethod
+    public void reloadTestBanner(PluginCall call) {
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからreloadTestBannerを受信");
+        runAction(call, MainActivity::reloadTestBanner);
+    }
+
+    @PluginMethod
+    public void showAdForDiagnostics(PluginCall call) {
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからshowAdForDiagnosticsを受信");
+        runAction(call, MainActivity::showBannerForDiagnostics);
+    }
+
+    @PluginMethod
+    public void hideAdForDiagnostics(PluginCall call) {
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからhideAdForDiagnosticsを受信");
+        runAction(call, MainActivity::hideBannerForDiagnostics);
+    }
+
+    @PluginMethod
+    public void runAdSdkDiagnostics(PluginCall call) {
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからrunAdSdkDiagnosticsを受信");
+        runAction(call, MainActivity::runAdSdkDiagnostics);
+    }
+
+    @PluginMethod
+    public void refreshUmpState(PluginCall call) {
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからrefreshUmpStateを受信");
+        runAction(call, MainActivity::refreshConsentForTesting);
+    }
+
+    @PluginMethod
     public void resetConsentForTesting(PluginCall call) {
-        MainActivity activity = getMainActivity(call);
-        if (activity == null) return;
-        activity.runOnUiThread(() -> activity.resetConsentForTesting((opened, message) -> {
-            JSObject result = new JSObject();
-            result.put("opened", opened);
-            result.put("message", message);
-            call.resolve(result);
-        }));
+        Log.i(MainActivity.TAG_BRIDGE, "WebViewからresetConsentForTestingを受信");
+        runAction(call, MainActivity::resetConsentForTesting);
     }
 
     private MainActivity getMainActivity(PluginCall call) {
@@ -60,6 +84,7 @@ public class TimeMasterNativePlugin extends Plugin {
         if (currentActivity instanceof MainActivity) {
             return (MainActivity) currentActivity;
         }
+        Log.e(MainActivity.TAG_BRIDGE, "MainActivity取得失敗 currentActivity=" + currentActivity);
         JSObject result = new JSObject();
         result.put("opened", false);
         result.put("message", "Androidネイティブ画面を取得できませんでした。");
@@ -76,7 +101,25 @@ public class TimeMasterNativePlugin extends Plugin {
         });
     }
 
+    private void runAction(PluginCall call, MainActivityCallbackAction action) {
+        MainActivity activity = getMainActivity(call);
+        if (activity == null) return;
+        activity.runOnUiThread(() -> action.run(activity, (succeeded, message) ->
+            resolveAction(call, succeeded, message)));
+    }
+
+    private void resolveAction(PluginCall call, boolean succeeded, String message) {
+        JSObject result = new JSObject();
+        result.put("opened", succeeded);
+        result.put("message", message);
+        call.resolve(result);
+    }
+
     private interface MainActivityAction {
         void run(MainActivity activity);
+    }
+
+    private interface MainActivityCallbackAction {
+        void run(MainActivity activity, MainActivity.ActionCallback callback);
     }
 }

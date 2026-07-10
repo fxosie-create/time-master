@@ -15,13 +15,13 @@ $adb = "$env:ANDROID_HOME\platform-tools\adb.exe"
 
 ```powershell
 & $adb logcat -c
-& $adb logcat -v time "TimeMasterAds:I" "TimeMasterUMP:I" "TimeMasterApp:I" "*:S"
+& $adb logcat -v time "TimeMasterAds:I" "TimeMasterUMP:I" "TimeMasterApp:I" "TimeMasterBridge:I" "*:S"
 ```
 
 Android Studioの場合はLogcatを開き、検索欄へ次を入力します。
 
 ```text
-tag:TimeMasterAds | tag:TimeMasterUMP | tag:TimeMasterApp
+tag:TimeMasterAds | tag:TimeMasterUMP | tag:TimeMasterApp | tag:TimeMasterBridge
 ```
 
 ## 3. 起動時に確認する順番
@@ -33,7 +33,7 @@ tag:TimeMasterAds | tag:TimeMasterUMP | tag:TimeMasterApp
 5. `TimeMasterUMP`: `canRequestAds` と `privacyOptionsRequirementStatus`
 6. debugでUMPが利用できない場合は「debug公式テスト広告のためフォールバック」
 7. `TimeMasterAds`: MobileAds初期化開始・完了
-8. `TimeMasterApp`: WebViewからshowBannerを受信
+8. `TimeMasterBridge`: WebViewからshowBannerを受信
 9. `TimeMasterAds`: バナー広告ロード開始・成功
 
 広告が出ない場合は、`バナー広告ロード失敗 code=... message=...` をそのまま控えてください。
@@ -46,7 +46,7 @@ tag:TimeMasterAds | tag:TimeMasterUMP | tag:TimeMasterApp
 
 ## 5. UMPテスト端末ハッシュ
 
-実機がUMPテスト端末として未登録の場合、Google UMP SDKがLogcatへテスト端末ハッシュの設定例を出します。その値だけをリポジトリ外の `%USERPROFILE%\.gradle\gradle.properties` へ設定します。
+debug版は端末のテストデバイスハッシュを算出して`TimeMasterUMP`ログとアプリ内診断情報に表示し、EEA強制設定へ使用します。Google UMP SDKが別の設定例をLogcatへ出した場合は、その値を優先してリポジトリ外の `%USERPROFILE%\.gradle\gradle.properties` へ設定します。
 
 ```properties
 TIME_MASTER_UMP_TEST_DEVICE_HASHED_ID=LOGCATに表示されたハッシュ
