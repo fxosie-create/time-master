@@ -16,10 +16,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/time-master-icon.svg", type: "image/svg+xml" },
+      { url: "/icons/time-master-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/time-master-icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/time-master-icon.svg", type: "image/svg+xml" },
+      { url: "/icons/time-master-icon-512.png", sizes: "512x512", type: "image/png" },
     ],
   },
 };

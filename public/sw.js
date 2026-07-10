@@ -1,5 +1,10 @@
-const CACHE_NAME = "time-master-v3";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/time-master-icon.svg"];
+const CACHE_NAME = "time-master-v4";
+const APP_SHELL = [
+  "/",
+  "/manifest.webmanifest",
+  "/icons/time-master-icon-192.png",
+  "/icons/time-master-icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
