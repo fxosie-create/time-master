@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { calculateMeasurementResult, formatAccuracy, formatDuration, formatSecondsFromMs, formatSignedDuration, getEvaluation } from "../lib/timeMaster";
 import { readBestRecords, shouldReplaceBestRecord, writeBestRecords } from "../lib/storage";
+import { MEASURING_MESSAGES, selectMeasuringMessage } from "../lib/measuringMessages";
 
 class MemoryStorage {
   private values = new Map<string, string>();
@@ -13,6 +14,15 @@ class MemoryStorage {
     this.values.set(key, value);
   }
 }
+
+describe("measuring messages", () => {
+  it("contains exactly ten static messages and selects one deterministically", () => {
+    expect(MEASURING_MESSAGES).toHaveLength(10);
+    expect(selectMeasuringMessage(() => 0)).toBe(MEASURING_MESSAGES[0]);
+    expect(selectMeasuringMessage(() => 0.9999)).toBe(MEASURING_MESSAGES[9]);
+    expect(selectMeasuringMessage(() => 1)).toBe(MEASURING_MESSAGES[9]);
+  });
+});
 
 describe("時間マスターの計測・判定ロジック", () => {
   it("60秒未満は秒、60秒以上は分・秒形式で小数点以下4桁に統一する", () => {

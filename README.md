@@ -28,5 +28,20 @@ npm run build
 - `types/`: 時間マスターの型定義
 - `public/icons/`: 差し替えやすいPWA仮アイコン
 - `public/sw.js`: 基本的なオフライン起動用サービスワーカー
+- `android/`: Capacitor AndroidアプリとネイティブAdMob/UMP実装
+- `resources/`: Androidアイコン再生成用の正式ロゴ原本
+- `docs/`: Google Play公開、Data Safety、app-ads.txtの準備資料
 
 自己ベストはブラウザの `localStorage` に `time-master-best-records` キーで保存されます。外部API、アカウント、データベースは使用しません。
+
+## Android
+
+Android版はゲームの静的出力を端末内へ同梱します。Web版には広告SDKを読み込まず、Android版だけがネイティブAdMob/UMPを使用します。
+
+```powershell
+npm run android:sync
+npm run android:apk:debug
+npm run android:aab
+```
+
+公開前の設定と署名手順は [Google Play 公開前チェックリスト](docs/PLAY_STORE_RELEASE_CHECKLIST.md) を参照してください。

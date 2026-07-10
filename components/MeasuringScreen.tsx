@@ -4,13 +4,14 @@ import styles from "./timeMaster.module.css";
 
 type MeasuringScreenProps = {
   targetMs: TargetMilliseconds;
+  message: string;
   onFinish: () => void;
 };
 
-export function MeasuringScreen({ targetMs, onFinish }: MeasuringScreenProps) {
+export function MeasuringScreen({ targetMs, message, onFinish }: MeasuringScreenProps) {
   return (
     <section className={`${styles.screen} ${styles.measuringScreen}`} aria-labelledby="measuring-title">
-      <h1 className={styles.measuringCopy} id="measuring-title">体感で時間を測ってください</h1>
+      <h1 className={styles.measuringCopy} id="measuring-title">{message}</h1>
       <p className={styles.targetPill}>目標：{getTargetLabel(targetMs)}</p>
       <button
         aria-label="計測を終了して結果を確認する"

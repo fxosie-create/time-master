@@ -1,0 +1,108 @@
+apply plugin: 'com.android.application'
+
+def testAdMobAppId = 'ca-app-pub-3940256099942544~3347511713'
+def testBannerAdUnitId = 'ca-app-pub-3940256099942544/9214589741'
+def configuredValue = { String key ->
+    def value = project.findProperty(key) ?: System.getenv(key) ?: ''
+    return value.toString().trim()
+}
+def escapeBuildConfigValue = { String value ->
+    return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+}
+def releaseAdMobAppId = configuredValue('TIME_MASTER_ADMOB_APP_ID')
+def releaseBannerAdUnitId = configuredValue('TIME_MASTER_ADMOB_BANNER_AD_UNIT_ID')
+def umpTestDeviceHashedId = configuredValue('TIME_MASTER_UMP_TEST_DEVICE_HASHED_ID')
+def releaseAdsEnabled = !releaseAdMobAppId.isEmpty() && !releaseBannerAdUnitId.isEmpty()
+def releaseStoreFile = configuredValue('TIME_MASTER_UPLOAD_STORE_FILE')
+def releaseStorePassword = configuredValue('TIME_MASTER_UPLOAD_STORE_PASSWORD')
+def releaseKeyAlias = configuredValue('TIME_MASTER_UPLOAD_KEY_ALIAS')
+def releaseKeyPassword = configuredValue('TIME_MASTER_UPLOAD_KEY_PASSWORD')
+def releaseSigningEnabled = !releaseStoreFile.isEmpty()
+    && !releaseStorePassword.isEmpty()
+    && !releaseKeyAlias.isEmpty()
+    && !releaseKeyPassword.isEmpty()
+
+android {
+    namespace = "com.ymrlab.timemaster"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.ymrlab.timemaster"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildFeatures {
+        buildConfig true
+    }
+    signingConfigs {
+        if (releaseSigningEnabled) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            buildConfigField 'boolean', 'ADS_ENABLED', 'true'
+            buildConfigField 'String', 'ADMOB_APP_ID', escapeBuildConfigValue(testAdMobAppId)
+            buildConfigField 'String', 'ADMOB_BANNER_AD_UNIT_ID', escapeBuildConfigValue(testBannerAdUnitId)
+            buildConfigField 'String', 'UMP_TEST_DEVICE_HASHED_ID', escapeBuildConfigValue(umpTestDeviceHashedId)
+            resValue 'string', 'admob_app_id', testAdMobAppId
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Production IDs are deliberately read only from an untracked Gradle property or environment variable.
+            buildConfigField 'boolean', 'ADS_ENABLED', releaseAdsEnabled.toString()
+            buildConfigField 'String', 'ADMOB_APP_ID', escapeBuildConfigValue(releaseAdMobAppId)
+            buildConfigField 'String', 'ADMOB_BANNER_AD_UNIT_ID', escapeBuildConfigValue(releaseBannerAdUnitId)
+            buildConfigField 'String', 'UMP_TEST_DEVICE_HASHED_ID', escapeBuildConfigValue('')
+            // The SDK requires an application ID resource. Without real release IDs, no SDK initialization occurs.
+            resValue 'string', 'admob_app_id', releaseAdsEnabled ? releaseAdMobAppId : testAdMobAppId
+            if (releaseSigningEnabled) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation 'com.google.android.gms:play-services-ads:25.4.0'
+    implementation 'com.google.android.ump:user-messaging-platform:4.0.0'
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

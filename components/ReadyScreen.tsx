@@ -8,6 +8,7 @@ type ReadyScreenProps = {
   bestRecords: BestRecords;
   onTargetChange: (targetMs: TargetMilliseconds) => void;
   onStart: () => void;
+  onOpenInfo: () => void;
 };
 
 export function ReadyScreen({
@@ -15,18 +16,22 @@ export function ReadyScreen({
   bestRecords,
   onTargetChange,
   onStart,
+  onOpenInfo,
 }: ReadyScreenProps) {
   return (
     <section className={styles.screen} aria-labelledby="app-title">
-      <header className={styles.headingGroup}>
-        <p className={styles.eyebrow}>TIME MASTER</p>
-        <h1 className={styles.title} id="app-title">時間マスター</h1>
-        <p className={styles.subtitle}>
-          時計を見ずに、あなたの体感だけで
-          <br />
-          ぴったりの時間を目指しましょう。
-        </p>
-      </header>
+      <div className={styles.readyHeader}>
+        <header className={styles.headingGroup}>
+          <p className={styles.eyebrow}>TIME MASTER</p>
+          <h1 className={styles.title} id="app-title">時間マスター</h1>
+          <p className={styles.subtitle}>
+            時計を見ずに、あなたの体感だけで
+            <br />
+            ぴったりの時間を目指しましょう。
+          </p>
+        </header>
+        <button aria-label="アプリ情報を開く" className={styles.infoButton} onClick={onOpenInfo} type="button">i</button>
+      </div>
 
       <p className={styles.sectionLabel}>目標時間を選ぶ</p>
       <TimeSelector onSelect={onTargetChange} selectedTargetMs={targetMs} />
