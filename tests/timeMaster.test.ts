@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { calculateMeasurementResult, formatAccuracy, formatSeconds, formatSecondsFromMs, getEvaluation } from "../lib/timeMaster";
-import { readBestRecords, writeBestRecords } from "../lib/storage";
+import { readBestRecords, shouldReplaceBestRecord, writeBestRecords } from "../lib/storage";
 
 class MemoryStorage {
   private values = new Map<string, string>();
@@ -93,5 +93,24 @@ describe("自己ベストの端末内保存", () => {
   it("壊れた保存データを空の記録として安全に扱う", () => {
     storage.setItem("time-master-best-records", "{壊れたJSON");
     expect(readBestRecords()).toEqual({});
+  });
+
+  it("表示上の誤差が同じでも、丸め前の誤差で自己ベストを比較する", () => {
+    const current = {
+      targetMs: 10000 as const,
+      actualMs: 10000.049,
+      absoluteDifferenceMs: 0.049,
+      accuracy: 99.99951,
+      recordedAt: "2026-07-10T00:00:00.000Z",
+    };
+    const candidate = {
+      ...current,
+      actualMs: 10000.04,
+      absoluteDifferenceMs: 0.04,
+    };
+
+    expect(formatSecondsFromMs(current.absoluteDifferenceMs)).toBe("0.0000秒");
+    expect(formatSecondsFromMs(candidate.absoluteDifferenceMs)).toBe("0.0000秒");
+    expect(shouldReplaceBestRecord(current, candidate)).toBe(true);
   });
 });
