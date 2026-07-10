@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { calculateMeasurementResult, formatAccuracy, formatSeconds, formatSecondsFromMs, getEvaluation } from "../lib/timeMaster";
+import { calculateMeasurementResult, formatAccuracy, formatDuration, formatSecondsFromMs, formatSignedDuration, getEvaluation } from "../lib/timeMaster";
 import { readBestRecords, shouldReplaceBestRecord, writeBestRecords } from "../lib/storage";
 
 class MemoryStorage {
@@ -15,11 +15,15 @@ class MemoryStorage {
 }
 
 describe("時間マスターの計測・判定ロジック", () => {
-  it("表示用の秒数を小数点以下4桁に統一する", () => {
-    expect(formatSeconds(10)).toBe("10.0000秒");
-    expect(formatSeconds(2.08756)).toBe("2.0876秒");
-    expect(formatSeconds(10.12344)).toBe("10.1234秒");
-    expect(formatSeconds(-7.91244)).toBe("−7.9124秒");
+  it("60秒未満は秒、60秒以上は分・秒形式で小数点以下4桁に統一する", () => {
+    expect(formatDuration(59.9999)).toBe("59.9999秒");
+    expect(formatDuration(60)).toBe("1分0.0000秒");
+    expect(formatDuration(61.2345)).toBe("1分1.2345秒");
+    expect(formatDuration(196.4392)).toBe("3分16.4392秒");
+    expect(formatDuration(300)).toBe("5分0.0000秒");
+    expect(formatDuration(625.1234)).toBe("10分25.1234秒");
+    expect(formatSignedDuration(-103.5608)).toBe("−1分43.5608秒");
+    expect(formatSignedDuration(63.1234)).toBe("＋1分3.1234秒");
     expect(formatSecondsFromMs(7912.44)).toBe("7.9124秒");
   });
 

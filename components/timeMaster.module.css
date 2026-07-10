@@ -114,7 +114,6 @@
 }
 
 .primaryButton,
-.secondaryButton,
 .finishButton {
   min-height: 64px;
   border: 0;
@@ -219,7 +218,7 @@
 }
 
 .resultElapsed {
-  font-size: clamp(2.35rem, 13vw, 3.4rem);
+  font-size: clamp(2.2rem, 10vw, 4.5rem);
   font-variant-numeric: tabular-nums;
   font-weight: 900;
   letter-spacing: -0.06em;
@@ -273,15 +272,12 @@
 
 .resultActions {
   display: grid;
-  gap: 12px;
-  margin-top: auto;
+  margin-top: 26px;
   padding-top: 26px;
 }
 
-.secondaryButton {
-  color: var(--foreground);
-  border: 2px solid var(--border);
-  background: var(--surface);
+.gameCard.resultCard {
+  min-height: 0;
 }
 
 .interruptedScreen {
@@ -364,5 +360,9 @@
 
   .resultActions {
     padding-top: 17px;
+  }
+
+  .gameCard.resultCard {
+    min-height: 0;
   }
 }

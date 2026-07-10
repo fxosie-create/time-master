@@ -4,14 +4,26 @@ import type {
   TargetMilliseconds,
 } from "../types/timeMaster";
 
-export function formatSeconds(seconds: number): string {
-  const normalized = Math.abs(seconds) < 0.00005 ? 0 : seconds;
-  const sign = normalized < 0 ? "−" : "";
-  return `${sign}${Math.abs(normalized).toFixed(4)}秒`;
+export function formatDuration(seconds: number): string {
+  const absoluteSeconds = Math.abs(seconds) < 0.00005 ? 0 : Math.abs(seconds);
+
+  if (absoluteSeconds < 60) {
+    return `${absoluteSeconds.toFixed(4)}秒`;
+  }
+
+  const minutes = Math.floor(absoluteSeconds / 60);
+  const remainingSeconds = absoluteSeconds - minutes * 60;
+  return `${minutes}分${remainingSeconds.toFixed(4)}秒`;
+}
+
+export function formatSignedDuration(seconds: number): string {
+  if (Math.abs(seconds) < 0.00005) return "0.0000秒";
+  if (seconds < 0) return `−${formatDuration(seconds)}`;
+  return `＋${formatDuration(seconds)}`;
 }
 
 export function formatSecondsFromMs(milliseconds: number): string {
-  return formatSeconds(milliseconds / 1000);
+  return formatDuration(milliseconds / 1000);
 }
 
 export function formatAccuracy(accuracy: number): string {
@@ -39,7 +51,7 @@ export function calculateMeasurementResult(
     100,
     Math.max(0, 100 - (absoluteDifferenceSeconds / targetSeconds) * 100),
   );
-  const isPerfectDisplay = formatSecondsFromMs(absoluteDifferenceMs) === "0.0000秒";
+  const isPerfectDisplay = formatDuration(absoluteDifferenceSeconds) === "0.0000秒";
 
   return {
     targetMs,

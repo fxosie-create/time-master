@@ -101,7 +101,7 @@ export function TimeMasterApp() {
   return (
     <main className={styles.appShell}>
       <ServiceWorkerRegistration />
-      <div className={styles.gameCard}>
+      <div className={`${styles.gameCard} ${screen === "result" ? styles.resultCard : ""}`}>
         {screen === "ready" && (
           <ReadyScreen
             bestRecords={bestRecords}
@@ -114,7 +114,6 @@ export function TimeMasterApp() {
         {screen === "result" && result && (
           <ResultScreen
             isNewBest={isNewBest}
-            onChooseAgain={returnToReady}
             onRetry={returnToReady}
             result={result}
           />

@@ -1,4 +1,4 @@
-import { formatAccuracy, formatSecondsFromMs } from "@/lib/timeMaster";
+import { formatAccuracy, formatSecondsFromMs, formatSignedDuration } from "@/lib/timeMaster";
 import type { MeasurementResult } from "@/types/timeMaster";
 import styles from "./timeMaster.module.css";
 
@@ -6,7 +6,6 @@ type ResultScreenProps = {
   result: MeasurementResult;
   isNewBest: boolean;
   onRetry: () => void;
-  onChooseAgain: () => void;
 };
 
 function getResultSentence(result: MeasurementResult): string {
@@ -17,11 +16,10 @@ function getResultSentence(result: MeasurementResult): string {
 
 function getDifferenceLabel(result: MeasurementResult): string {
   if (result.isPerfectDisplay) return "±0.0000秒";
-  const prefix = result.differenceMs < 0 ? "−" : "＋";
-  return `${prefix}${formatSecondsFromMs(result.absoluteDifferenceMs)}`;
+  return formatSignedDuration(result.differenceMs / 1000);
 }
 
-export function ResultScreen({ result, isNewBest, onRetry, onChooseAgain }: ResultScreenProps) {
+export function ResultScreen({ result, isNewBest, onRetry }: ResultScreenProps) {
   return (
     <section aria-live="polite" className={`${styles.screen} ${styles.resultScreen}`} aria-labelledby="result-title">
       <h1 className={styles.resultHeading} id="result-title">結果発表</h1>
@@ -60,7 +58,6 @@ export function ResultScreen({ result, isNewBest, onRetry, onChooseAgain }: Resu
 
       <div className={styles.resultActions}>
         <button className={styles.primaryButton} onClick={onRetry} type="button">もう一度</button>
-        <button className={styles.secondaryButton} onClick={onChooseAgain} type="button">時間を選び直す</button>
       </div>
     </section>
   );
