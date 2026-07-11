@@ -1,0 +1,15 @@
+{
+  "id": "time-master",
+  "name": "時間マスター",
+  "status": "waiting_user",
+  "milestones": {
+    "app": "done",
+    "admob": "in_progress",
+    "publish": "in_progress"
+  },
+  "current": "主要機能とDebug版のテスト広告・UMP実機確認は完了しています。本番AdMob設定と署名済みAABは未確認です。",
+  "next": "AdMobで時間マスターを正式登録し、本番用アプリIDとバナーIDを取得する。",
+  "nextOwner": "user",
+  "blockedReason": "",
+  "updatedAt": "2026-07-11T18:43:43+09:00"
+}
