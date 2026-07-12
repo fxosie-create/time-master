@@ -1,2 +1,2 @@
-# この見本をそのまま公開しないでください。AdMobの実際のpublisher IDへ置換します。
-google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# 時間マスター用。YMR Labサイトのルートへ app-ads.txt として公開します。
+google.com, pub-7486115105644729, DIRECT, f08c47fec0942fa0

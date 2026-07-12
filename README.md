@@ -32,7 +32,7 @@ npm run build
 - `resources/`: Androidアイコン再生成用の正式ロゴ原本
 - `docs/`: Google Play公開、Data Safety、app-ads.txtの準備資料
 
-自己ベストはブラウザの `localStorage` に `time-master-best-records` キーで保存されます。外部API、アカウント、データベースは使用しません。
+自己ベストはブラウザの `localStorage` に `time-master-best-records` キーで保存され、外部送信されません。外部API、アカウント、データベースは使用しません。Android releaseで使用するGoogle Mobile Ads SDK / UMPのデータ処理はこの端末内データとは別で、AdMob SDKが収集・共有するユーザーデータはTLSで転送中に暗号化されます。
 
 ## Android
 

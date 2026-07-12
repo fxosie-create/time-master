@@ -7,9 +7,9 @@
     "admob": "in_progress",
     "publish": "in_progress"
   },
-  "current": "主要機能とDebug版のテスト広告・UMP実機確認は完了しています。本番AdMob設定と署名済みAABは未確認です。",
-  "next": "AdMobで時間マスターを正式登録し、本番用アプリIDとバナーIDを取得する。",
+  "current": "本番AdMob IDをリポジトリ外へ設定し、Debug版の公式テスト広告・UMP・画面別広告制御と、未署名Release APK/AABの生成まで確認済みです。署名とPlay Console登録は未実施です。",
+  "next": "AdMobの「プライバシーとメッセージ」で時間マスター用の本番メッセージを作成・公開する。",
   "nextOwner": "user",
   "blockedReason": "",
-  "updatedAt": "2026-07-11T18:43:43+09:00"
+  "updatedAt": "2026-07-12T16:12:29+09:00"
 }
