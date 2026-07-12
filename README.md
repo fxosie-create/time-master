@@ -1,6 +1,6 @@
 # 時間マスター / Time Master
 
-時計を見ずに目標時間を測る、スマホ優先の時間感覚ゲームです。計測には `performance.now()` の開始・終了時刻の差を使い、タイマーやカウントダウンは実行しません。
+時計を見ずに目標時間を測る、スマホ優先の時間感覚ゲームです。開始前の3秒カウントダウンは `performance.now()` 基準で表示し、終了後に取得した新しい開始時刻と終了時刻の差だけを計測結果に使います。計測中は時間更新処理を実行しません。
 
 ## 起動方法
 
@@ -23,10 +23,10 @@ npm run build
 ## 構成
 
 - `app/`: Next.jsのページ、メタデータ、共通スタイル
-- `components/`: 開始前・計測中・結果・中断の各画面UI
+- `components/`: 開始前・カウントダウン・計測中・結果・中断の各画面UI
 - `lib/`: 時間判定とlocalStorageの処理
 - `types/`: 時間マスターの型定義
-- `public/icons/`: 差し替えやすいPWA仮アイコン
+- `public/icons/`: PWA用の正式アイコン
 - `public/sw.js`: 基本的なオフライン起動用サービスワーカー
 - `android/`: Capacitor AndroidアプリとネイティブAdMob/UMP実装
 - `resources/`: Androidアイコン再生成用の正式ロゴ原本

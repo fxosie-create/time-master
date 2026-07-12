@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "時間マスター",
   webDir: "out",
   android: {
-    backgroundColor: "#f7f8ff",
+    backgroundColor: "#050615",
   },
 };
 

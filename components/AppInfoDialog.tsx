@@ -82,7 +82,7 @@ export function AppInfoDialog({ onClose }: AppInfoDialogProps) {
         <dl className={styles.infoList}>
           <div><dt>アプリ名</dt><dd>時間マスター</dd></div>
           <div><dt>バージョン</dt><dd>1.0.1</dd></div>
-          <div><dt>遊び方</dt><dd>時計を見ずに目標時間を体感で測り、「終了」を押します。</dd></div>
+          <div><dt>遊び方</dt><dd>3秒のカウントダウン後、時計を見ずに目標時間を体感で測り、「終了」を押します。</dd></div>
           <div><dt>ライセンス</dt><dd>MIT（アプリ本体）</dd></div>
         </dl>
 

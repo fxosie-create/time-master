@@ -1,33 +1,16 @@
 :root {
-  --background: #f7f8ff;
-  --foreground: #1c1b2b;
-  --surface: #ffffff;
-  --surface-muted: #eef0ff;
-  --border: #d9ddf5;
-  --primary: #5b4bdb;
-  --primary-strong: #4332c4;
+  color-scheme: dark;
+  --background: #050615;
+  --foreground: #f8f8ff;
+  --surface: #15183e;
+  --surface-muted: #20245a;
+  --border: #555c9b;
+  --primary: #7c4df4;
+  --primary-strong: #3323a1;
   --primary-text: #ffffff;
-  --secondary: #f0effc;
-  --success: #087a53;
-  --warning: #a14a0b;
-  --shadow: 0 18px 50px rgb(45 42 94 / 12%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #10111a;
-    --foreground: #f4f3fc;
-    --surface: #1a1b29;
-    --surface-muted: #24263a;
-    --border: #3a3d58;
-    --primary: #aaa0ff;
-    --primary-strong: #c0b9ff;
-    --primary-text: #18152e;
-    --secondary: #292b42;
-    --success: #6ce0b4;
-    --warning: #ffc18d;
-    --shadow: 0 18px 50px rgb(0 0 0 / 28%);
-  }
+  --success: #8df0d0;
+  --warning: #ffc18d;
+  --shadow: 0 24px 70px rgb(0 0 12 / 55%);
 }
 
 * {
@@ -36,11 +19,14 @@
 }
 
 html {
+  min-width: 320px;
   min-height: 100%;
+  overflow-x: hidden;
   background: var(--background);
 }
 
 body {
+  min-width: 320px;
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
@@ -60,6 +46,7 @@ select {
 
 button {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:disabled {
@@ -67,7 +54,7 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 3px solid #e28a20;
+  outline: 3px solid #80ddff;
   outline-offset: 3px;
 }
 

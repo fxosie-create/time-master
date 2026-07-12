@@ -20,3 +20,10 @@ export function selectMeasuringMessage(random: () => number = Math.random): Meas
   );
   return MEASURING_MESSAGES[index];
 }
+
+export function getMeasuringMessageLines(message: MeasuringMessage | string): readonly string[] {
+  if (message === "ぴったりだと思ったら終了") {
+    return ["ぴったりだと思ったら", "終了"];
+  }
+  return [message];
+}

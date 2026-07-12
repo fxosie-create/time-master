@@ -7,9 +7,9 @@
     "admob": "in_progress",
     "publish": "in_progress"
   },
-  "current": "本番AdMob IDをリポジトリ外へ設定し、Debug版の公式テスト広告・UMP・画面別広告制御と、未署名Release APK/AABの生成まで確認済みです。署名とPlay Console登録は未実施です。",
-  "next": "AdMobの「プライバシーとメッセージ」で時間マスター用の本番メッセージを作成・公開する。",
+  "current": "3秒カウントダウンと紫・青・濃紺の新デザインを実装し、Web 360px表示とAndroid Debug版の広告・UMP・中断・戻る操作まで確認済みです。未署名Release APK/AABも生成済みです。",
+  "next": "新しいDebug APKをAndroid実機へ入れ、3秒カウントダウンと各画面の表示を確認する。",
   "nextOwner": "user",
   "blockedReason": "",
-  "updatedAt": "2026-07-12T16:12:29+09:00"
+  "updatedAt": "2026-07-12T17:26:58+09:00"
 }

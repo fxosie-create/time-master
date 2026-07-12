@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "時間マスター",
   },
   icons: {
@@ -26,11 +26,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f8ff" },
-    { media: "(prefers-color-scheme: dark)", color: "#10111a" },
-  ],
-  colorScheme: "light dark",
+  themeColor: "#080a20",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({

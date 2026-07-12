@@ -4,11 +4,18 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { App } from "@capacitor/app";
 import type { PluginListenerHandle } from "@capacitor/core";
 import { AppInfoDialog } from "@/components/AppInfoDialog";
+import { CountdownScreen } from "@/components/CountdownScreen";
 import { InterruptedScreen } from "@/components/InterruptedScreen";
 import { MeasuringScreen } from "@/components/MeasuringScreen";
 import { ReadyScreen } from "@/components/ReadyScreen";
 import { ResultScreen } from "@/components/ResultScreen";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import {
+  COUNTDOWN_DURATION_MS,
+  getCountdownNumber,
+  getNextCountdownDelay,
+  type CountdownNumber,
+} from "@/lib/countdown";
 import { calculateMeasurementResult } from "@/lib/timeMaster";
 import { selectMeasuringMessage } from "@/lib/measuringMessages";
 import { isAndroidNativeApp, setNativeBannerVisible, subscribeToNativeBannerVisibility } from "@/lib/nativeApp";
@@ -16,7 +23,7 @@ import { readBestRecords, shouldReplaceBestRecord, writeBestRecords } from "@/li
 import type { BestRecord, BestRecords, MeasurementResult, TargetMilliseconds } from "@/types/timeMaster";
 import styles from "./timeMaster.module.css";
 
-type Screen = "ready" | "measuring" | "result" | "interrupted";
+type Screen = "ready" | "countdown" | "measuring" | "result" | "interrupted";
 
 export function TimeMasterApp() {
   const [screen, setScreen] = useState<Screen>("ready");
@@ -24,10 +31,14 @@ export function TimeMasterApp() {
   const [result, setResult] = useState<MeasurementResult | null>(null);
   const [bestRecords, setBestRecords] = useState<BestRecords>({});
   const [isNewBest, setIsNewBest] = useState(false);
+  const [countdownValue, setCountdownValue] = useState<CountdownNumber>(3);
   const [measuringMessage, setMeasuringMessage] = useState("体感で時間を測ってください");
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [nativeBannerHeight, setNativeBannerHeight] = useState(0);
   const startTimeRef = useRef<number | null>(null);
+  const countdownEndTimeRef = useRef<number | null>(null);
+  const countdownTimerRef = useRef<number | null>(null);
+  const challengeHistoryEntryRef = useRef(false);
   const finishingRef = useRef(false);
   const bestRecordsRef = useRef<BestRecords>({});
 
@@ -59,33 +70,89 @@ export function TimeMasterApp() {
     ? ({ "--native-banner-height": `${nativeBannerHeight}px` } as CSSProperties)
     : undefined;
 
+  const clearCountdownTimer = useCallback(() => {
+    if (countdownTimerRef.current === null) return;
+    window.clearTimeout(countdownTimerRef.current);
+    countdownTimerRef.current = null;
+  }, []);
+
+  const releaseChallengeHistoryEntry = useCallback(() => {
+    if (isAndroidNativeApp() || !challengeHistoryEntryRef.current) return;
+    challengeHistoryEntryRef.current = false;
+    if (window.history.state?.timeMasterChallenge === true) {
+      window.history.back();
+    }
+  }, []);
+
   const returnToReady = useCallback(() => {
+    clearCountdownTimer();
+    releaseChallengeHistoryEntry();
+    countdownEndTimeRef.current = null;
     startTimeRef.current = null;
     finishingRef.current = false;
     setResult(null);
     setIsNewBest(false);
     setScreen("ready");
-  }, []);
+  }, [clearCountdownTimer, releaseChallengeHistoryEntry]);
 
-  const interruptMeasurement = useCallback(() => {
-    if (startTimeRef.current === null || finishingRef.current) return;
+  const interruptChallenge = useCallback(() => {
+    const challengeIsActive = countdownEndTimeRef.current !== null || startTimeRef.current !== null;
+    if (!challengeIsActive || finishingRef.current) return;
     finishingRef.current = true;
+    clearCountdownTimer();
+    countdownEndTimeRef.current = null;
     startTimeRef.current = null;
     setScreen("interrupted");
+  }, [clearCountdownTimer]);
+
+  const beginMeasurementAfterCountdown = useCallback(() => {
+    if (countdownEndTimeRef.current === null || finishingRef.current) return;
+
+    countdownEndTimeRef.current = null;
+    countdownTimerRef.current = null;
+    setMeasuringMessage(selectMeasuringMessage());
+    startTimeRef.current = performance.now();
+    setScreen("measuring");
   }, []);
 
   useEffect(() => {
-    if (screen !== "measuring") return;
+    if (screen !== "countdown") return;
+
+    const updateCountdown = () => {
+      const countdownEndTime = countdownEndTimeRef.current;
+      if (countdownEndTime === null) return;
+
+      const currentTime = performance.now();
+      const nextValue = getCountdownNumber(countdownEndTime, currentTime);
+      if (nextValue === null) {
+        countdownTimerRef.current = null;
+        beginMeasurementAfterCountdown();
+        return;
+      }
+
+      setCountdownValue((currentValue) => currentValue === nextValue ? currentValue : nextValue);
+      countdownTimerRef.current = window.setTimeout(
+        updateCountdown,
+        getNextCountdownDelay(countdownEndTime, currentTime),
+      );
+    };
+
+    updateCountdown();
+    return clearCountdownTimer;
+  }, [beginMeasurementAfterCountdown, clearCountdownTimer, screen]);
+
+  useEffect(() => {
+    if (screen !== "countdown" && screen !== "measuring") return;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
-        interruptMeasurement();
+        interruptChallenge();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [screen, interruptMeasurement]);
+  }, [screen, interruptChallenge]);
 
   useEffect(() => {
     if (!isAndroidNativeApp()) return;
@@ -95,13 +162,15 @@ export function TimeMasterApp() {
     const registerListeners = async () => {
       const registered = await Promise.all([
         App.addListener("appStateChange", ({ isActive }) => {
-          if (!isActive) interruptMeasurement();
+          if (!isActive) interruptChallenge();
         }),
         App.addListener("backButton", () => {
           if (isInfoOpen) {
             setIsInfoOpen(false);
+          } else if (screen === "countdown") {
+            returnToReady();
           } else if (screen === "measuring") {
-            interruptMeasurement();
+            interruptChallenge();
           } else if (screen !== "ready") {
             returnToReady();
           } else {
@@ -122,14 +191,43 @@ export function TimeMasterApp() {
       disposed = true;
       for (const handle of handles) void handle.remove();
     };
-  }, [interruptMeasurement, isInfoOpen, returnToReady, screen]);
+  }, [interruptChallenge, isInfoOpen, returnToReady, screen]);
 
-  const startMeasurement = useCallback(() => {
-    if (screen !== "ready" || startTimeRef.current !== null) return;
+  useEffect(() => {
+    if (isAndroidNativeApp()) return;
+
+    const handlePopState = () => {
+      if (!challengeHistoryEntryRef.current) return;
+      challengeHistoryEntryRef.current = false;
+      if (screen === "measuring") {
+        interruptChallenge();
+      } else if (screen !== "ready") {
+        returnToReady();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [interruptChallenge, returnToReady, screen]);
+
+  const startCountdown = useCallback(() => {
+    if (
+      screen !== "ready"
+      || countdownEndTimeRef.current !== null
+      || startTimeRef.current !== null
+    ) return;
+
     finishingRef.current = false;
-    setMeasuringMessage(selectMeasuringMessage());
-    startTimeRef.current = performance.now();
-    setScreen("measuring");
+    setNativeBannerHeight(0);
+    void setNativeBannerVisible(false, "countdown");
+    if (!isAndroidNativeApp() && !challengeHistoryEntryRef.current) {
+      window.history.pushState({ ...window.history.state, timeMasterChallenge: true }, "");
+      challengeHistoryEntryRef.current = true;
+    }
+    const currentTime = performance.now();
+    countdownEndTimeRef.current = currentTime + COUNTDOWN_DURATION_MS;
+    setCountdownValue(3);
+    setScreen("countdown");
   }, [screen]);
 
   const finishMeasurement = useCallback(() => {
@@ -163,18 +261,23 @@ export function TimeMasterApp() {
   }, [screen, targetMs]);
 
   return (
-    <main className={`${styles.appShell} ${nativeBannerHeight > 0 ? styles.nativeBannerVisible : ""}`} style={appStyle}>
+    <main
+      className={`${styles.appShell} ${nativeBannerHeight > 0 ? styles.nativeBannerVisible : ""} ${screen === "measuring" ? styles.measurementMode : ""}`}
+      data-screen={screen}
+      style={appStyle}
+    >
       <ServiceWorkerRegistration />
-      <div className={`${styles.gameCard} ${screen === "result" ? styles.resultCard : ""}`}>
+      <div className={`${styles.gameCard} ${screen === "result" ? styles.resultCard : ""} ${screen === "countdown" ? styles.countdownCard : ""}`}>
         {screen === "ready" && (
           <ReadyScreen
             bestRecords={bestRecords}
-            onStart={startMeasurement}
+            onStart={startCountdown}
             onOpenInfo={() => setIsInfoOpen(true)}
             onTargetChange={setTargetMs}
             targetMs={targetMs}
           />
         )}
+        {screen === "countdown" && <CountdownScreen value={countdownValue} />}
         {screen === "measuring" && <MeasuringScreen message={measuringMessage} onFinish={finishMeasurement} targetMs={targetMs} />}
         {screen === "result" && result && (
           <ResultScreen

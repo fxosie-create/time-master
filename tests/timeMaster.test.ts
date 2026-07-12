@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { calculateMeasurementResult, formatAccuracy, formatDuration, formatSecondsFromMs, formatSignedDuration, getEvaluation } from "../lib/timeMaster";
 import { readBestRecords, shouldReplaceBestRecord, writeBestRecords } from "../lib/storage";
-import { MEASURING_MESSAGES, selectMeasuringMessage } from "../lib/measuringMessages";
+import { getMeasuringMessageLines, MEASURING_MESSAGES, selectMeasuringMessage } from "../lib/measuringMessages";
+import {
+  COUNTDOWN_DURATION_MS,
+  getCountdownNumber,
+  getNextCountdownDelay,
+} from "../lib/countdown";
 
 class MemoryStorage {
   private values = new Map<string, string>();
@@ -21,6 +26,39 @@ describe("measuring messages", () => {
     expect(selectMeasuringMessage(() => 0)).toBe(MEASURING_MESSAGES[0]);
     expect(selectMeasuringMessage(() => 0.9999)).toBe(MEASURING_MESSAGES[9]);
     expect(selectMeasuringMessage(() => 1)).toBe(MEASURING_MESSAGES[9]);
+  });
+
+  it("終了の2文字が分断されない自然な行へ分ける", () => {
+    expect(getMeasuringMessageLines("ぴったりだと思ったら終了")).toEqual([
+      "ぴったりだと思ったら",
+      "終了",
+    ]);
+    expect(getMeasuringMessageLines("自分の体内時計を信じて")).toEqual([
+      "自分の体内時計を信じて",
+    ]);
+  });
+});
+
+describe("3秒カウントダウン", () => {
+  it("performance.now由来の終了時刻との差から3、2、1を決める", () => {
+    const countdownStart = 5_000;
+    const countdownEnd = countdownStart + COUNTDOWN_DURATION_MS;
+
+    expect(getCountdownNumber(countdownEnd, countdownStart)).toBe(3);
+    expect(getCountdownNumber(countdownEnd, countdownStart + 999)).toBe(3);
+    expect(getCountdownNumber(countdownEnd, countdownStart + 1_000)).toBe(2);
+    expect(getCountdownNumber(countdownEnd, countdownStart + 2_000)).toBe(1);
+    expect(getCountdownNumber(countdownEnd, countdownStart + 2_999.9)).toBe(1);
+    expect(getCountdownNumber(countdownEnd, countdownEnd)).toBeNull();
+  });
+
+  it("コールバックが遅れても残り時間から正しい数字と次回待機時間を求める", () => {
+    const countdownEnd = 10_000;
+
+    expect(getCountdownNumber(countdownEnd, 8_450)).toBe(2);
+    expect(getNextCountdownDelay(countdownEnd, 8_450)).toBeGreaterThanOrEqual(16);
+    expect(getNextCountdownDelay(countdownEnd, 9_999)).toBeGreaterThanOrEqual(16);
+    expect(getNextCountdownDelay(countdownEnd, 10_000)).toBe(0);
   });
 });
 

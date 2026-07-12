@@ -1,28 +1,103 @@
 .appShell {
+  position: relative;
   display: grid;
   min-height: 100vh;
   min-height: 100dvh;
+  isolation: isolate;
+  overflow-x: clip;
   place-items: center;
   padding: 20px 16px;
+  background:
+    radial-gradient(circle at 12% 18%, rgb(133 74 255 / 24%), transparent 28%),
+    radial-gradient(circle at 88% 78%, rgb(33 133 255 / 22%), transparent 31%),
+    radial-gradient(circle at 50% 45%, rgb(25 41 109 / 34%), transparent 56%),
+    linear-gradient(145deg, #050615 0%, #0b0b27 46%, #10113a 72%, #080a20 100%);
+}
+
+.appShell::before,
+.appShell::after {
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+}
+
+.appShell::before {
+  width: min(92vw, 760px);
+  aspect-ratio: 1;
+  border: 1px solid rgb(150 129 255 / 25%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 0 47%, rgb(92 157 255 / 12%) 47.3% 47.8%, transparent 48.2%),
+    repeating-conic-gradient(from -1deg, rgb(169 140 255 / 22%) 0 1deg, transparent 1deg 15deg);
+  box-shadow:
+    0 0 0 24px rgb(76 100 255 / 3%),
+    0 0 90px rgb(88 79 255 / 18%),
+    inset 0 0 70px rgb(63 126 255 / 8%);
+  opacity: 0.52;
+}
+
+.appShell::after {
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 10% 30%, rgb(255 255 255 / 56%) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 24% 77%, rgb(158 116 255 / 48%) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 78% 22%, rgb(79 175 255 / 55%) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 91% 58%, rgb(255 121 222 / 38%) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 64% 88%, rgb(255 255 255 / 40%) 0 1px, transparent 1.7px);
+  opacity: 0.65;
+}
+
+.measurementMode::before,
+.measurementMode::after {
+  animation: none;
 }
 
 .gameCard {
+  position: relative;
+  z-index: 1;
   display: flex;
   width: min(100%, 520px);
   min-height: min(720px, calc(100dvh - 40px));
   flex-direction: column;
+  overflow: hidden;
   padding: clamp(24px, 6vw, 36px);
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  border: 1px solid rgb(145 151 255 / 34%);
+  border-radius: 30px;
+  background:
+    linear-gradient(155deg, rgb(23 25 65 / 94%), rgb(9 11 35 / 96%));
+  box-shadow:
+    0 24px 70px rgb(0 0 12 / 55%),
+    0 0 42px rgb(80 73 255 / 12%),
+    inset 0 1px 0 rgb(255 255 255 / 8%);
+  backdrop-filter: blur(16px);
+}
+
+.gameCard::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #9e8cff, #4ec8ff, transparent);
+  content: "";
 }
 
 .screen {
+  position: relative;
   display: flex;
+  min-width: 0;
   min-height: 100%;
   flex: 1;
   flex-direction: column;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .headingGroup {
@@ -36,13 +111,14 @@
 .infoButton,
 .dialogCloseButton {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   place-items: center;
-  border: 1px solid var(--border);
+  border: 1px solid rgb(151 151 255 / 42%);
   border-radius: 50%;
-  color: var(--foreground);
-  background: var(--surface-muted);
+  color: #f9f8ff;
+  background: linear-gradient(145deg, rgb(38 42 92 / 90%), rgb(19 21 55 / 96%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 0 18px rgb(104 92 255 / 12%);
   font-weight: 900;
 }
 
@@ -51,111 +127,136 @@
   top: 0;
   right: 0;
   font-family: Georgia, serif;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
 }
 
 .eyebrow {
   margin-bottom: 8px;
-  color: var(--primary);
+  color: #8ccfff;
   font-size: 0.88rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-shadow: 0 0 14px rgb(85 171 255 / 55%);
 }
 
 .title {
+  color: #ffffff;
+  background: linear-gradient(100deg, #ffffff 8%, #c8b6ff 46%, #72d5ff 88%);
+  background-clip: text;
   font-size: clamp(2rem, 9vw, 2.75rem);
   line-height: 1.15;
   letter-spacing: -0.05em;
+  text-shadow: 0 0 26px rgb(119 94 255 / 30%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
   margin-top: 14px;
-  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  color: #c8cae6;
   font-size: 0.98rem;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
 .sectionLabel {
-  margin: clamp(30px, 7vw, 42px) 0 12px;
-  font-size: 0.95rem;
-  font-weight: 800;
+  margin: clamp(28px, 6vw, 38px) 0 12px;
+  color: #f7f6ff;
+  font-size: 0.96rem;
+  font-weight: 900;
 }
 
 .timeGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 11px;
 }
 
 .timeButton {
-  min-height: 66px;
+  min-height: 68px;
   padding: 10px 8px;
-  border: 2px solid var(--border);
-  border-radius: 16px;
-  color: var(--foreground);
-  background: var(--surface);
+  border: 2px solid rgb(122 130 218 / 55%);
+  border-radius: 17px;
+  color: #f7f7ff;
+  background: linear-gradient(145deg, rgb(25 29 72 / 94%), rgb(15 17 48 / 98%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 900;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 }
 
 .timeButton[aria-pressed="true"] {
-  border-color: var(--primary);
-  color: var(--primary-text);
-  background: var(--primary);
-  box-shadow: inset 0 0 0 1px var(--primary);
+  border-color: #c6d5ff;
+  color: #ffffff;
+  background: linear-gradient(135deg, #8a45f2 0%, #5548e8 48%, #258bd9 100%);
+  box-shadow:
+    0 0 0 1px rgb(166 204 255 / 45%),
+    0 0 24px rgb(108 74 255 / 48%),
+    inset 0 1px 0 rgb(255 255 255 / 24%);
 }
 
 .selectedMark {
   display: block;
   margin-top: 2px;
+  color: #ffffff;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .bestRecord {
   min-height: 108px;
   margin-top: 18px;
   padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--surface-muted);
+  border: 1px solid rgb(123 138 232 / 42%);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(94 88 255 / 17%), transparent 44%),
+    rgb(16 20 53 / 84%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .bestRecordTitle {
-  font-size: 0.82rem;
-  font-weight: 800;
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 900;
 }
 
 .bestRecordEmpty,
 .bestRecordDetail {
   margin-top: 9px;
-  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  color: #c9cbe4;
   font-size: 0.92rem;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .bestRecordDetail strong {
-  color: var(--foreground);
+  color: #ffffff;
 }
 
 .primaryButton,
 .finishButton {
-  min-height: 64px;
-  border: 0;
-  border-radius: 18px;
-  font-size: 1.1rem;
+  min-height: 66px;
+  border: 1px solid rgb(216 226 255 / 45%);
+  border-radius: 19px;
+  color: #ffffff;
+  background: linear-gradient(110deg, #8e3ff0 0%, #5947ed 47%, #218bd5 100%);
+  box-shadow:
+    0 9px 0 #3323a1,
+    0 0 28px rgb(100 70 255 / 34%),
+    inset 0 1px 0 rgb(255 255 255 / 24%);
+  font-size: 1.12rem;
   font-weight: 900;
+  text-shadow: 0 1px 2px rgb(20 8 65 / 65%);
 }
 
 .secondaryButton {
   display: grid;
-  min-height: 48px;
+  min-height: 50px;
   place-items: center;
   padding: 10px 14px;
-  border: 2px solid var(--border);
+  border: 1px solid rgb(139 145 234 / 52%);
   border-radius: 14px;
-  color: var(--foreground);
-  background: var(--surface);
+  color: #f7f7ff;
+  background: linear-gradient(145deg, rgb(31 35 83 / 95%), rgb(17 19 53 / 98%));
   font-size: 0.92rem;
   font-weight: 800;
   text-decoration: none;
@@ -170,22 +271,124 @@
 .primaryButton {
   width: 100%;
   margin-top: auto;
-  color: var(--primary-text);
-  background: var(--primary);
-  box-shadow: 0 9px 0 var(--primary-strong);
 }
 
-.primaryButton:active {
+.primaryButton:active,
+.finishButton:active {
   transform: translateY(4px);
-  box-shadow: 0 5px 0 var(--primary-strong);
+  box-shadow:
+    0 5px 0 #3323a1,
+    0 0 20px rgb(100 70 255 / 28%),
+    inset 0 1px 0 rgb(255 255 255 / 20%);
 }
 
 .hint {
   margin-top: 19px;
-  color: color-mix(in srgb, var(--foreground) 60%, transparent);
-  font-size: 0.78rem;
-  line-height: 1.55;
+  color: #aeb1d0;
+  font-size: 0.79rem;
+  line-height: 1.6;
   text-align: center;
+}
+
+.countdownCard {
+  background:
+    radial-gradient(circle at 50% 46%, rgb(78 68 205 / 22%), transparent 48%),
+    linear-gradient(155deg, rgb(18 20 58 / 97%), rgb(7 9 31 / 99%));
+}
+
+.countdownScreen {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.countdownDial {
+  position: relative;
+  display: grid;
+  width: min(70vw, 282px);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 2px solid rgb(176 184 255 / 72%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgb(34 32 92 / 96%) 0 52%, rgb(20 22 66 / 94%) 52.5% 66%, rgb(8 10 36 / 98%) 66.5%),
+    #101332;
+  box-shadow:
+    0 0 0 10px rgb(97 82 255 / 9%),
+    0 0 50px rgb(101 77 255 / 52%),
+    0 0 90px rgb(36 143 255 / 24%),
+    inset 0 0 42px rgb(68 137 255 / 18%);
+}
+
+.countdownDial::before,
+.countdownDial::after {
+  position: absolute;
+  border-radius: 50%;
+  content: "";
+}
+
+.countdownDial::before {
+  inset: 12%;
+  border: 1px solid rgb(99 191 255 / 52%);
+  box-shadow: 0 0 20px rgb(85 132 255 / 25%);
+}
+
+.countdownDial::after {
+  inset: 4%;
+  border: 1px solid rgb(177 109 255 / 28%);
+}
+
+.countdownTick {
+  position: absolute;
+  width: 4px;
+  height: 16px;
+  border-radius: 999px;
+  background: #8ed9ff;
+  box-shadow: 0 0 10px #665cff;
+}
+
+.countdownTick:nth-child(1) { top: 16px; left: calc(50% - 2px); }
+.countdownTick:nth-child(2) { top: calc(50% - 8px); right: 22px; transform: rotate(90deg); }
+.countdownTick:nth-child(3) { bottom: 16px; left: calc(50% - 2px); }
+.countdownTick:nth-child(4) { top: calc(50% - 8px); left: 22px; transform: rotate(90deg); }
+
+.countdownNumber {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  font-size: clamp(7rem, 34vw, 11rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  line-height: 1;
+  text-indent: -0.08em;
+  text-shadow:
+    0 0 10px #ffffff,
+    0 0 28px #905dff,
+    0 0 52px #2e9fff;
+  animation: countdownArrival 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.countdownAnnouncement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.countdownHint {
+  margin-top: 34px;
+  color: #d8dbf6;
+  font-size: 0.96rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+@keyframes countdownArrival {
+  from { opacity: 0; transform: scale(1.14); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .measuringScreen {
@@ -195,37 +398,44 @@
 }
 
 .measuringCopy {
-  font-size: clamp(1.45rem, 7vw, 2rem);
+  width: 100%;
+  max-width: 22rem;
+  padding: 20px 16px;
+  border: 1px solid rgb(128 145 235 / 36%);
+  border-radius: 20px;
+  color: #ffffff;
+  background: rgb(14 18 50 / 74%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%), 0 0 28px rgb(64 72 180 / 12%);
+  font-size: clamp(1.28rem, 6.2vw, 1.85rem);
   font-weight: 900;
-  line-height: 1.4;
+  line-break: strict;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.measuringCopyLine {
+  display: block;
 }
 
 .targetPill {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  margin-top: 18px;
-  padding: 8px 18px;
-  border: 1px solid var(--border);
+  min-height: 46px;
+  margin-top: 20px;
+  padding: 8px 19px;
+  border: 1px solid rgb(132 145 232 / 48%);
   border-radius: 999px;
-  background: var(--surface-muted);
+  color: #eef0ff;
+  background: rgb(25 29 75 / 84%);
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .finishButton {
-  width: min(100%, 300px);
-  min-height: 116px;
-  margin-top: clamp(62px, 14vh, 120px);
-  color: var(--primary-text);
-  background: var(--primary);
-  box-shadow: 0 10px 0 var(--primary-strong);
-  font-size: clamp(1.45rem, 7vw, 1.8rem);
-}
-
-.finishButton:active {
-  transform: translateY(4px);
-  box-shadow: 0 6px 0 var(--primary-strong);
+  width: min(100%, 310px);
+  min-height: 120px;
+  margin-top: clamp(60px, 14vh, 116px);
+  font-size: clamp(1.5rem, 7vw, 1.9rem);
 }
 
 .resultScreen {
@@ -233,92 +443,109 @@
 }
 
 .resultHeading {
-  font-size: 1.55rem;
+  color: #ffffff;
+  font-size: 1.6rem;
   line-height: 1.35;
+  text-shadow: 0 0 20px rgb(103 99 255 / 35%);
 }
 
 .newBest {
   display: inline-block;
   margin-top: 13px;
-  padding: 7px 12px;
+  padding: 7px 13px;
+  border: 1px solid rgb(255 221 139 / 72%);
   border-radius: 999px;
-  color: #064b34;
-  background: #baf4d8;
+  color: #fff6cf;
+  background: linear-gradient(110deg, rgb(137 90 31 / 85%), rgb(104 66 183 / 78%));
+  box-shadow: 0 0 18px rgb(255 190 69 / 22%);
   font-size: 0.86rem;
   font-weight: 900;
 }
 
 .resultHero {
-  margin: 26px 0 20px;
-  padding: 22px 14px;
-  border-radius: 20px;
-  background: var(--surface-muted);
+  margin: 25px 0 20px;
+  padding: 23px 12px;
+  border: 1px solid rgb(128 143 235 / 42%);
+  border-radius: 21px;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(111 78 255 / 24%), transparent 62%),
+    rgb(17 21 58 / 86%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 0 32px rgb(77 66 218 / 14%);
 }
 
 .resultHeroLabel {
-  margin-bottom: 10px;
-  color: color-mix(in srgb, var(--foreground) 68%, transparent);
+  margin-bottom: 11px;
+  color: #bfc3e3;
   font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .resultElapsed {
-  font-size: clamp(2.2rem, 10vw, 4.5rem);
+  max-width: 100%;
+  color: #ffffff;
+  font-size: clamp(2rem, 9vw, 4.3rem);
   font-variant-numeric: tabular-nums;
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 1;
+  letter-spacing: -0.065em;
+  line-height: 1.05;
+  text-shadow: 0 0 26px rgb(87 156 255 / 44%);
   white-space: nowrap;
 }
 
 .resultPerfect {
-  color: var(--success);
+  color: #9df6da;
+  text-shadow: 0 0 24px rgb(65 236 187 / 40%);
 }
 
 .resultSummary {
-  margin-top: 13px;
+  margin-top: 14px;
+  color: #f3f2ff;
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .resultRows {
   display: grid;
   gap: 1px;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--border);
+  border: 1px solid rgb(126 136 218 / 42%);
+  border-radius: 17px;
+  background: rgb(117 129 218 / 32%);
   text-align: left;
 }
 
 .resultRow {
   display: flex;
+  min-width: 0;
   align-items: baseline;
   justify-content: space-between;
-  gap: 20px;
+  gap: 14px;
   padding: 13px 15px;
-  background: var(--surface);
+  color: #c8cbe6;
+  background: rgb(15 18 49 / 94%);
   font-size: 0.93rem;
 }
 
-.resultRow span:first-child {
-  color: color-mix(in srgb, var(--foreground) 68%, transparent);
-}
-
 .resultRow strong {
+  color: #ffffff;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
 .resultRow dd {
+  min-width: 0;
   margin: 0;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: right;
   white-space: nowrap;
 }
 
 .resultActions {
   display: grid;
-  margin-top: 26px;
-  padding-top: 26px;
+  margin-top: 25px;
+  padding-top: 25px;
 }
 
 .gameCard.resultCard {
@@ -326,28 +553,30 @@
 }
 
 .nativeBannerVisible {
-  padding-bottom: calc(var(--native-banner-height) + 16px + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--native-banner-height) + 18px + env(safe-area-inset-bottom));
 }
 
 .dialogBackdrop {
   position: fixed;
-  z-index: 10;
+  z-index: 20;
   inset: 0;
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgb(10 11 26 / 55%);
+  background: rgb(3 4 18 / 82%);
+  backdrop-filter: blur(9px);
 }
 
 .infoDialog {
   width: min(100%, 440px);
-  max-height: min(680px, calc(100dvh - 32px));
+  max-height: min(700px, calc(100dvh - 32px));
   overflow: auto;
   padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  border: 1px solid rgb(137 145 232 / 48%);
+  border-radius: 25px;
+  color: #f8f8ff;
+  background: linear-gradient(155deg, rgb(23 26 68 / 99%), rgb(9 11 35 / 99%));
+  box-shadow: 0 24px 70px rgb(0 0 12 / 72%), 0 0 42px rgb(80 73 255 / 20%);
 }
 
 .infoDialogHeader {
@@ -366,24 +595,25 @@
   gap: 1px;
   margin-top: 22px;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--border);
+  border: 1px solid rgb(126 136 218 / 38%);
+  border-radius: 15px;
+  background: rgb(117 129 218 / 28%);
 }
 
 .infoList div {
   padding: 12px 14px;
-  background: var(--surface);
+  background: rgb(15 18 49 / 94%);
 }
 
 .infoList dt {
-  color: color-mix(in srgb, var(--foreground) 66%, transparent);
+  color: #aeb2d3;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .infoList dd {
   margin: 4px 0 0;
+  color: #ffffff;
   line-height: 1.55;
 }
 
@@ -396,9 +626,10 @@
 .privacyFeedback {
   margin-top: 14px;
   padding: 12px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid rgb(126 136 218 / 42%);
   border-radius: 12px;
-  background: var(--surface-muted);
+  color: #e8e9ff;
+  background: rgb(25 29 75 / 82%);
   font-size: 0.86rem;
   line-height: 1.6;
 }
@@ -406,7 +637,7 @@
 .debugPanel {
   margin-top: 22px;
   padding-top: 20px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgb(126 136 218 / 38%);
 }
 
 .debugHeader {
@@ -423,10 +654,10 @@
 .compactButton {
   min-height: 36px;
   padding: 6px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid rgb(126 136 218 / 44%);
   border-radius: 10px;
-  color: var(--foreground);
-  background: var(--surface-muted);
+  color: #ffffff;
+  background: rgb(25 29 75 / 82%);
   font-weight: 800;
 }
 
@@ -435,9 +666,9 @@
   gap: 1px;
   margin: 14px 0;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid rgb(126 136 218 / 38%);
   border-radius: 12px;
-  background: var(--border);
+  background: rgb(117 129 218 / 28%);
 }
 
 .debugList div {
@@ -445,18 +676,19 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   gap: 10px;
   padding: 9px 10px;
-  background: var(--surface);
+  background: rgb(15 18 49 / 94%);
   font-size: 0.75rem;
 }
 
 .debugList dt {
-  color: color-mix(in srgb, var(--foreground) 66%, transparent);
+  color: #aeb2d3;
   font-weight: 800;
 }
 
 .debugList dd {
   margin: 0;
   overflow-wrap: anywhere;
+  color: #ffffff;
   text-align: right;
 }
 
@@ -472,13 +704,15 @@
 
 .interruptedIcon {
   display: grid;
-  width: 64px;
-  height: 64px;
+  width: 66px;
+  height: 66px;
   margin: 0 auto 22px;
   place-items: center;
+  border: 1px solid rgb(255 187 113 / 46%);
   border-radius: 50%;
-  color: var(--warning);
-  background: color-mix(in srgb, var(--warning) 16%, transparent);
+  color: #ffd1a2;
+  background: rgb(172 83 31 / 22%);
+  box-shadow: 0 0 22px rgb(255 131 70 / 12%);
   font-size: 2rem;
   font-weight: 900;
 }
@@ -486,7 +720,7 @@
 .interruptedMessage {
   margin: 14px auto 0;
   max-width: 24rem;
-  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  color: #c9cbe4;
   line-height: 1.75;
 }
 
@@ -495,63 +729,36 @@
 }
 
 @media (min-width: 600px) {
-  .appShell {
-    padding: 28px;
-  }
-
-  .gameCard {
-    min-height: 680px;
-  }
+  .appShell { padding: 28px; }
+  .gameCard { min-height: 680px; }
 }
 
-@media (max-height: 680px) and (max-width: 599px) {
-  .appShell {
-    align-items: start;
-    padding: 12px;
-  }
+@media (max-width: 380px) {
+  .appShell { padding-inline: 10px; }
+  .gameCard { padding-inline: 20px; border-radius: 24px; }
+  .resultElapsed { font-size: clamp(1.82rem, 8.8vw, 3rem); }
+  .resultRow { gap: 8px; padding-inline: 12px; font-size: 0.88rem; }
+  .measuringCopy { padding-inline: 11px; font-size: clamp(1.2rem, 6vw, 1.55rem); }
+}
 
-  .gameCard {
-    min-height: calc(100dvh - 24px);
-    padding: 21px;
-    border-radius: 22px;
-  }
+@media (max-height: 700px) and (max-width: 599px) {
+  .appShell { align-items: start; padding: 12px; }
+  .gameCard { min-height: calc(100dvh - 24px); padding: 21px; border-radius: 23px; }
+  .sectionLabel { margin-top: 18px; }
+  .timeButton { min-height: 54px; }
+  .bestRecord { min-height: 86px; padding: 12px; }
+  .hint { margin-top: 13px; }
+  .countdownDial { width: min(58vh, 250px); }
+  .countdownHint { margin-top: 24px; }
+  .finishButton { min-height: 96px; margin-top: 38px; }
+  .resultHero { margin: 16px 0 13px; padding: 16px 9px; }
+  .resultRow { padding-block: 10px; }
+  .resultActions { margin-top: 16px; padding-top: 16px; }
+  .gameCard.resultCard { min-height: 0; }
+  .nativeBannerVisible { padding-bottom: calc(var(--native-banner-height) + 12px + env(safe-area-inset-bottom)); }
+}
 
-  .sectionLabel {
-    margin-top: 20px;
-  }
-
-  .timeButton {
-    min-height: 54px;
-  }
-
-  .bestRecord {
-    min-height: 88px;
-    padding: 12px;
-  }
-
-  .hint {
-    margin-top: 13px;
-  }
-
-  .finishButton {
-    min-height: 94px;
-    margin-top: 38px;
-  }
-
-  .resultHero {
-    margin: 17px 0 14px;
-    padding: 17px 10px;
-  }
-
-  .resultActions {
-    padding-top: 17px;
-  }
-
-  .gameCard.resultCard {
-    min-height: 0;
-  }
-
-  .nativeBannerVisible {
-    padding-bottom: calc(var(--native-banner-height) + 12px + env(safe-area-inset-bottom));
-  }
+@media (prefers-reduced-motion: reduce) {
+  .countdownNumber { animation: none; }
+  .timeButton { transition: none; }
 }
