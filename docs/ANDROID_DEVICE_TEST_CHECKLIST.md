@@ -22,7 +22,7 @@
 
 - [ ] アプリ情報に「広告・同意デバッグ情報」が表示される
 - [ ] Build typeが`debug`
-- [ ] Android buildが`1.0.1 (2)`
+- [ ] Android buildが`1.0.2 (3)`
 - [ ] AdMob modeが`test`
 - [ ] AdMob App ID設定済みが`true`
 - [ ] Banner ID設定済みが`true`

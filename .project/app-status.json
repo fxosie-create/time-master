@@ -7,9 +7,9 @@
     "admob": "in_progress",
     "publish": "in_progress"
   },
-  "current": "3秒カウントダウンと紫・青・濃紺の新デザインを実装し、Web 360px表示とAndroid Debug版の広告・UMP・中断・戻る操作まで確認済みです。未署名Release APK/AABも生成済みです。",
-  "next": "新しいDebug APKをAndroid実機へ入れ、3秒カウントダウンと各画面の表示を確認する。",
+  "current": "正式アイコンとスプラッシュを反映し、アプリ情報からMITライセンス欄を削除してAndroid版を1.0.2（versionCode 3）へ更新しました。WebとAndroidの全検証が成功し、未署名Release AABを生成済みです。",
+  "next": "Android Studioで既存または新規のアップロード鍵を指定し、署名済みRelease AABを生成する。",
   "nextOwner": "user",
   "blockedReason": "",
-  "updatedAt": "2026-07-12T17:26:58+09:00"
+  "updatedAt": "2026-07-14T10:14:12+09:00"
 }

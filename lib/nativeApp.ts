@@ -93,7 +93,7 @@ export async function showNativePrivacyOptions(): Promise<NativeActionResult> {
   } catch {
     return {
       opened: false,
-      message: "Androidネイティブブリッジへ接続できませんでした。Time Master 1.0.1 debug APKを再インストールしてください。",
+      message: "Androidネイティブブリッジへ接続できませんでした。Time Master 1.0.2 debug APKを再インストールしてください。",
     };
   }
 }

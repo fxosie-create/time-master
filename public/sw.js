@@ -1,4 +1,4 @@
-const CACHE_NAME = "time-master-v7";
+const CACHE_NAME = "time-master-v8";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",

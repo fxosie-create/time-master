@@ -26,6 +26,7 @@
 *.jks
 *.keystore
 /android/local.properties
+/android/.idea/
 
 # debug
 npm-debug.log*
